@@ -10,24 +10,27 @@ import type { Product } from '@/lib/types';
 interface ProductCardProps {
   product: Product;
   onAddToCart?: (product: Product) => void;
+  onViewDetails?: (product: Product) => void;
   showQuickView?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   onAddToCart, 
+  onViewDetails,
   showQuickView = true 
 }: ProductCardProps) {
   
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
       {/* Product Image */}
-      <div className="aspect-square w-full overflow-hidden rounded-t-lg bg-gray-50">
-        <Link href={`/products/${product.ingramPartNumber}`}>
-          <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-            <span className="text-gray-400 text-sm">No Image</span>
-          </div>
-        </Link>
+      <div 
+        className="aspect-square w-full overflow-hidden rounded-t-lg bg-gray-50 cursor-pointer"
+        onClick={() => onViewDetails?.(product)}
+      >
+        <div className="h-full w-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+          <span className="text-gray-400 text-sm">No Image</span>
+        </div>
         
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -60,14 +63,12 @@ export function ProductCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-              <Link 
-                href={`/products/${product.ingramPartNumber}`}
-                className="hover:text-blue-600"
-              >
-                {product.description}
-              </Link>
-            </h3>
+                <h3 
+                  className="text-sm font-medium text-gray-900 line-clamp-2 cursor-pointer hover:text-blue-600"
+                  onClick={() => onViewDetails?.(product)}
+                >
+                  {product.description}
+                </h3>
             
             <p className="mt-1 text-xs text-gray-500">
               SKU: {product.ingramPartNumber}

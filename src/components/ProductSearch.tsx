@@ -5,6 +5,7 @@ import { Search, Filter, Grid, List } from 'lucide-react';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useCart } from '@/lib/hooks/useCart';
 import { ProductCard } from './product/ProductCard';
+import { ProductDetailsModal } from './product/ProductDetailsModal';
 import { Button } from './ui/Button';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { Badge } from './ui/Badge';
@@ -18,6 +19,8 @@ const ProductSearch = () => {
     pageNumber: 1,
     pageSize: 20,
   });
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
   const { addToCart } = useCart();
@@ -50,6 +53,16 @@ const ProductSearch = () => {
     // Note: Price information is not available in catalog search
     // User will need to check price & availability first
     alert('Please check price & availability first before adding to cart');
+  };
+
+  const handleViewDetails = (product: Product) => {
+    setSelectedProductId(product.ingramPartNumber);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedProductId(null);
   };
 
   const handlePageChange = (page: number) => {
@@ -130,13 +143,14 @@ const ProductSearch = () => {
           {viewMode === 'grid' ? (
             <div className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.ingramPartNumber}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
+                    {products.map((product) => (
+                      <ProductCard
+                        key={product.ingramPartNumber}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))}
               </div>
             </div>
           ) : (
@@ -362,6 +376,15 @@ const ProductSearch = () => {
               </Button>
             </div>
           )}
+
+      {/* Product Details Modal */}
+      {selectedProductId && (
+        <ProductDetailsModal
+          productId={selectedProductId}
+          isOpen={isDetailsModalOpen}
+          onClose={handleCloseDetails}
+        />
+      )}
     </div>
   );
 };

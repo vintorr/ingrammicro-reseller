@@ -1,0 +1,238 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { X, Package, DollarSign, Truck, Star, AlertCircle } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
+import type { Product } from '../../lib/types';
+
+interface ProductDetailsModalProps {
+  productId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetailsModalProps) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      fetchProductDetails();
+    }
+  }, [isOpen, productId]);
+
+  const fetchProductDetails = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/api/ingram/products/${productId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setProduct(data);
+    } catch (err) {
+      console.error('Error fetching product details:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load product details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          onClick={onClose}
+        />
+        
+        {/* Modal */}
+        <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Product Details</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="p-2"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner size="lg" />
+                <span className="ml-2 text-gray-600">Loading product details...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="text-center py-12">
+                <div className="text-red-600 mb-2">
+                  <AlertCircle className="mx-auto h-12 w-12" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Product</h3>
+                <p className="text-gray-500 mb-4">{error}</p>
+                <Button onClick={fetchProductDetails} variant="primary">
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {product && (
+              <div className="space-y-6">
+                {/* Product Header */}
+                <div className="flex items-start gap-6">
+                  {/* Product Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Package className="h-16 w-16 text-gray-400" />
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          {product.description}
+                        </h3>
+                        <p className="text-lg text-gray-600 mb-2">
+                          SKU: {product.ingramPartNumber}
+                        </p>
+                        <p className="text-lg text-gray-600 mb-4">
+                          Brand: {product.vendorName}
+                        </p>
+                      </div>
+                      
+                      {/* Badges */}
+                      <div className="flex flex-col gap-2">
+                        {product.newProduct === 'True' && (
+                          <Badge variant="success">New Product</Badge>
+                        )}
+                        {product.directShip === 'True' && (
+                          <Badge variant="info">Direct Ship</Badge>
+                        )}
+                        {product.discontinued === 'True' && (
+                          <Badge variant="warning">Discontinued</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Product Information
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Category:</span>
+                        <p className="text-gray-900">{product.category || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Subcategory:</span>
+                        <p className="text-gray-900">{product.subCategory || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">UPC:</span>
+                        <p className="text-gray-900">{product.upcCode || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Product Type:</span>
+                        <p className="text-gray-900">{product.productType || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pricing & Availability */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Pricing & Availability
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Price:</span>
+                        <p className="text-gray-900">
+                          Price available on request
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Availability:</span>
+                        <p className="text-gray-900">
+                          Check availability for pricing
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Authorized to Purchase:</span>
+                        <p className="text-gray-900">
+                          {product.authorizedToPurchase === 'True' ? 'Yes' : 'No'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Status:</span>
+                        <p className="text-gray-900">
+                          {product.discontinued === 'True' ? 'Discontinued' : 'Active'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                {product.extraDescription && (
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Star className="h-5 w-5" />
+                      Additional Information
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-700">{product.extraDescription}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="primary"
+                      disabled={product.discontinued === 'True' || product.authorizedToPurchase === 'False'}
+                    >
+                      Add to Cart
+                    </Button>
+                    <Button variant="secondary">
+                      Request Quote
+                    </Button>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500">
+                    Last updated: {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
