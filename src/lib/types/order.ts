@@ -21,19 +21,65 @@ export interface ShippingAddress {
 }
 
 export interface Order {
-  orderId: string;
-  orderNumber: string;
-  status: OrderStatus;
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  total: number;
-  shippingAddress: ShippingAddress;
-  billingAddress: ShippingAddress;
-  orderDate: string;
-  estimatedDelivery?: string;
-  trackingNumbers?: TrackingInfo[];
+  ingramOrderNumber: string;
+  ingramOrderDate: string;
+  orderType: string;
+  customerOrderNumber: string;
+  endCustomerOrderNumber: string;
+  webOrderId: string;
+  vendorSalesOrderNumber: string;
+  ingramPurchaseOrderNumber: string;
+  orderStatus: string;
+  orderTotal: number;
+  orderSubTotal: number;
+  freightCharges: number;
+  currencyCode: string;
+  totalWeight: number;
+  totalTax: number;
+  paymentTerms: string;
+  notes: string;
+  billToInfo: AddressInfo;
+  shipToInfo: AddressInfo;
+  endUserInfo: AddressInfo;
+  lines: OrderLine[];
+  miscellaneousCharges: MiscellaneousCharge[];
+  additionalAttributes: AdditionalAttribute[];
+}
+
+export interface AddressInfo {
+  contact: string;
+  companyName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  countryCode: string;
+  phoneNumber: string;
+  email: string;
+}
+
+export interface OrderLine {
+  customerLineNumber: string;
+  ingramPartNumber: string;
+  vendorPartNumber: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  status: string;
+  addUpdateDeleteLine?: string;
+}
+
+export interface MiscellaneousCharge {
+  chargeType: string;
+  chargeAmount: number;
+  description: string;
+}
+
+export interface AdditionalAttribute {
+  attributeName: string;
+  attributeValue: string;
 }
 
 export interface OrderItem {
@@ -85,6 +131,35 @@ export interface OrderCreateResponse {
   orderTotal: number;
   items: OrderItem[];
   estimatedDelivery?: string;
+}
+
+export interface OrderSearchResponse {
+  recordsFound: string;
+  pageSize: string;
+  pageNumber: string;
+  orders: Order[];
+  nextPage?: string;
+  previousPage?: string;
+}
+
+export interface OrderSearchRequest {
+  customerOrderNumber?: string;
+  endCustomerOrderNumber?: string;
+  orderNumber?: string;
+  orderStatus?: string;
+  fromDate?: string;
+  toDate?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface OrderModifyRequest {
+  lines: Array<{
+    customerLineNumber: string;
+    ingramPartNumber: string;
+    addUpdateDeleteLine: 'ADD' | 'UPDATE' | 'DELETE';
+    quantity?: number;
+  }>;
 }
 
 // Quote types
