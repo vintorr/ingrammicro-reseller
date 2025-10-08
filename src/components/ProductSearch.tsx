@@ -5,12 +5,13 @@ import { Search, Filter, Grid, List } from 'lucide-react';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useCart } from '@/lib/hooks/useCart';
 import { ProductCard } from './product/ProductCard';
+import { ProductListRow } from './product/ProductListRow';
 import { ProductDetailsModal } from './product/ProductDetailsModal';
 import { Button } from './ui/Button';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { Badge } from './ui/Badge';
 import { formatCurrency } from '@/lib/utils/formatters';
-import type { Product, ProductSearchRequest } from '@/lib/types';
+import type { Product, ProductSearchRequest, PriceAvailabilityResponse } from '@/lib/types';
 
 const ProductSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,12 +22,46 @@ const ProductSearch = () => {
   });
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [priceAvailabilityData, setPriceAvailabilityData] = useState<PriceAvailabilityResponse | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
   
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
   const { addToCart } = useCart();
 
   // Debug logging
   console.log('ProductSearch: Current state:', { products: products.length, loading, error, totalPages, currentPage });
+
+  // Batch fetch price and availability for all products
+  const fetchBatchPriceAndAvailability = async (products: Product[]) => {
+    if (products.length === 0) return;
+    
+    setPriceLoading(true);
+    try {
+      const response = await fetch('/api/ingram/price-availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          products: products.map(product => ({
+            ingramPartNumber: product.ingramPartNumber
+          }))
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Batch price availability API error');
+        return;
+      }
+      
+      const data = await response.json();
+      setPriceAvailabilityData(data);
+    } catch (err) {
+      console.error('Error fetching batch price and availability:', err);
+    } finally {
+      setPriceLoading(false);
+    }
+  };
 
   // Load initial products on component mount
   useEffect(() => {
@@ -35,6 +70,19 @@ const ProductSearch = () => {
     console.log('ProductSearch: Current state:', { products: products.length, loading, error, totalPages, currentPage });
     searchProducts({ pageNumber: 1, pageSize: 20 });
   }, [searchProducts]);
+
+  // Fetch price and availability when products change
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchBatchPriceAndAvailability(products);
+    }
+  }, [products]);
+
+  // Helper function to get price/availability data for a specific product
+  const getProductPriceAvailability = (ingramPartNumber: string) => {
+    if (!priceAvailabilityData) return null;
+    return priceAvailabilityData.find(item => item.ingramPartNumber === ingramPartNumber) || null;
+  };
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -149,6 +197,8 @@ const ProductSearch = () => {
                         product={product}
                         onAddToCart={handleAddToCart}
                         onViewDetails={handleViewDetails}
+                        priceAvailabilityData={priceAvailabilityData}
+                        priceLoading={priceLoading}
                       />
                     ))}
               </div>
@@ -174,50 +224,14 @@ const ProductSearch = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {products.map((product) => (
-                    <tr key={product.ingramPartNumber} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {product.description}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            SKU: {product.ingramPartNumber} | Brand: {product.brand}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          Price available on request
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Check availability for pricing
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge 
-                          variant={product.discontinued === 'True' ? 'warning' : 'info'}
-                        >
-                          {product.discontinued === 'True' 
-                            ? 'Discontinued' 
-                            : 'Check availability'
-                          }
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.discontinued === 'True' || product.authorizedToPurchase === 'False'}
-                        >
-                          {product.discontinued === 'True'
-                            ? 'Discontinued' 
-                            : product.authorizedToPurchase === 'False'
-                              ? 'Not Authorized'
-                              : 'Add to Cart'
-                          }
-                        </Button>
-                      </td>
-                    </tr>
+                    <ProductListRow
+                      key={product.ingramPartNumber}
+                      product={product}
+                      onAddToCart={handleAddToCart}
+                      onViewDetails={handleViewDetails}
+                      priceAvailabilityData={priceAvailabilityData}
+                      priceLoading={priceLoading}
+                    />
                   ))}
                 </tbody>
               </table>

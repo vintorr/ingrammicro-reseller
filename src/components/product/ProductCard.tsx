@@ -15,52 +15,22 @@ interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
   showQuickView?: boolean;
+  priceAvailabilityData?: any;
+  priceLoading?: boolean;
 }
 
 export function ProductCard({ 
   product, 
   onAddToCart, 
   onViewDetails,
-  showQuickView = true 
+  showQuickView = true,
+  priceAvailabilityData,
+  priceLoading = false
 }: ProductCardProps) {
-  const [priceAvailability, setPriceAvailability] = useState<PriceAvailabilityResponse | null>(null);
-  const [priceLoading, setPriceLoading] = useState(false);
-
-  useEffect(() => {
-    fetchPriceAndAvailability();
-  }, [product.ingramPartNumber]);
-
-  const fetchPriceAndAvailability = async () => {
-    setPriceLoading(true);
-    
-    try {
-      const response = await fetch('/api/ingram/price-availability', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          products: [
-            {
-              ingramPartNumber: product.ingramPartNumber
-            }
-          ]
-        })
-      });
-      
-      if (!response.ok) {
-        console.error('Price availability API error for product:', product.ingramPartNumber);
-        return;
-      }
-      
-      const data = await response.json();
-      setPriceAvailability(data);
-    } catch (err) {
-      console.error('Error fetching price and availability for product:', product.ingramPartNumber, err);
-    } finally {
-      setPriceLoading(false);
-    }
-  };
+  // Get price/availability data for this specific product
+  const productPriceAvailability = priceAvailabilityData?.find(
+    (item: any) => item.ingramPartNumber === product.ingramPartNumber
+  );
   
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
@@ -128,19 +98,19 @@ export function ProductCard({
               <LoadingSpinner size="sm" />
               <span className="text-sm text-gray-500">Loading price...</span>
             </div>
-          ) : priceAvailability?.[0]?.pricing ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-green-600">
-                  ${priceAvailability[0].pricing.customerPrice} {priceAvailability[0].pricing.currencyCode}
-                </span>
-              </div>
-              {priceAvailability[0].pricing.retailPrice > priceAvailability[0].pricing.customerPrice && (
-                <div className="text-sm text-gray-500 line-through">
-                  MSRP: ${priceAvailability[0].pricing.retailPrice} {priceAvailability[0].pricing.currencyCode}
-                </div>
-              )}
-            </div>
+                        ) : productPriceAvailability?.pricing ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold text-green-600">
+                                ${productPriceAvailability.pricing.customerPrice} {productPriceAvailability.pricing.currencyCode}
+                              </span>
+                            </div>
+                            {productPriceAvailability.pricing.retailPrice > productPriceAvailability.pricing.customerPrice && (
+                              <div className="text-sm text-gray-500 line-through">
+                                MSRP: ${productPriceAvailability.pricing.retailPrice} {productPriceAvailability.pricing.currencyCode}
+                              </div>
+                            )}
+                          </div>
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">
@@ -154,22 +124,22 @@ export function ProductCard({
         <div className="mt-2">
           {priceLoading ? (
             <p className="text-sm text-gray-500">Checking availability...</p>
-          ) : priceAvailability?.[0]?.availability ? (
-            <div className="flex items-center gap-2">
-              {priceAvailability[0].availability.available ? (
-                <>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600 font-medium">
-                    In Stock ({priceAvailability[0].availability.totalAvailability})
-                  </span>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                  <span className="text-sm text-red-600 font-medium">Out of Stock</span>
-                </>
-              )}
-            </div>
+                        ) : productPriceAvailability?.availability ? (
+                          <div className="flex items-center gap-2">
+                            {productPriceAvailability.availability.available ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <span className="text-sm text-green-600 font-medium">
+                                  In Stock ({productPriceAvailability.availability.totalAvailability})
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <span className="text-sm text-red-600 font-medium">Out of Stock</span>
+                              </>
+                            )}
+                          </div>
           ) : (
             <p className="text-sm text-gray-600">
               Check availability for pricing
@@ -184,7 +154,7 @@ export function ProductCard({
             disabled={
               product.discontinued === 'True' || 
               product.authorizedToPurchase === 'False' ||
-              (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
+              (productPriceAvailability?.availability && !productPriceAvailability.availability.available)
             }
             className="w-full"
           >
@@ -193,7 +163,7 @@ export function ProductCard({
               ? 'Discontinued' 
               : product.authorizedToPurchase === 'False'
                 ? 'Not Authorized'
-                : (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
+                : (productPriceAvailability?.availability && !productPriceAvailability.availability.available)
                   ? 'Out of Stock'
                   : 'Add to Cart'
             }
