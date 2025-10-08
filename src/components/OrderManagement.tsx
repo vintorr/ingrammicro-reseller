@@ -46,10 +46,18 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: OrderSearchResponse = await response.json();
-      setOrders(data.orders);
-      setTotalPages(Math.ceil(parseInt(data.recordsFound) / parseInt(data.pageSize)));
-      setCurrentPage(parseInt(data.pageNumber));
+          const data: OrderSearchResponse = await response.json();
+          // Filter out invalid orders and ensure unique keys
+          const validOrders = (data.orders || []).filter((order, index) => {
+            if (!order || !order.ingramOrderNumber) {
+              console.warn(`Invalid order at index ${index}:`, order);
+              return false;
+            }
+            return true;
+          });
+          setOrders(validOrders);
+          setTotalPages(Math.ceil(parseInt(data.recordsFound) / parseInt(data.pageSize)));
+          setCurrentPage(parseInt(data.pageNumber));
     } catch (err) {
       console.error('Error loading orders:', err);
       setError(err instanceof Error ? err.message : 'Failed to load orders');
@@ -287,8 +295,13 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
-                  <tr key={order.ingramOrderNumber} className="hover:bg-gray-50">
+                {orders
+                  .filter((order) => order && order.ingramOrderNumber) // Filter out invalid orders
+                  .map((order, index) => {
+                    // Create a unique key combining order number and index to prevent duplicates
+                    const uniqueKey = `${order.ingramOrderNumber}-${index}`;
+                    return (
+                  <tr key={uniqueKey} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {order.ingramOrderNumber}
@@ -338,7 +351,8 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                    );
+                  })}
               </tbody>
             </table>
           </div>
