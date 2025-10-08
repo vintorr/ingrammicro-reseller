@@ -520,9 +520,24 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowModifyForm(true);
+                          onClick={async () => {
+                            setLoading(true);
+                            setError(null);
+                            
+                            try {
+                              const response = await fetch(`/api/ingram/orders/${order.ingramOrderNumber}`);
+                              if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                              }
+                              
+                              const orderDetails: Order = await response.json();
+                              setSelectedOrder(orderDetails);
+                              setShowModifyForm(true);
+                            } catch (err) {
+                              setError(err instanceof Error ? err.message : 'Failed to load order details');
+                            } finally {
+                              setLoading(false);
+                            }
                           }}
                         >
                           <Edit className="w-4 h-4" />
