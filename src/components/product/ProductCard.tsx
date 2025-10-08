@@ -1,11 +1,14 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
-import type { Product } from '@/lib/types';
+import type { Product, PriceAvailabilityResponse } from '@/lib/types';
 
 interface ProductCardProps {
   product: Product;
@@ -20,6 +23,44 @@ export function ProductCard({
   onViewDetails,
   showQuickView = true 
 }: ProductCardProps) {
+  const [priceAvailability, setPriceAvailability] = useState<PriceAvailabilityResponse | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPriceAndAvailability();
+  }, [product.ingramPartNumber]);
+
+  const fetchPriceAndAvailability = async () => {
+    setPriceLoading(true);
+    
+    try {
+      const response = await fetch('/api/ingram/price-availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          products: [
+            {
+              ingramPartNumber: product.ingramPartNumber
+            }
+          ]
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('Price availability API error for product:', product.ingramPartNumber);
+        return;
+      }
+      
+      const data = await response.json();
+      setPriceAvailability(data);
+    } catch (err) {
+      console.error('Error fetching price and availability for product:', product.ingramPartNumber, err);
+    } finally {
+      setPriceLoading(false);
+    }
+  };
   
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
@@ -82,32 +123,79 @@ export function ProductCard({
 
         {/* Pricing */}
         <div className="mt-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              Price available on request
-            </span>
-          </div>
+          {priceLoading ? (
+            <div className="flex items-center gap-2">
+              <LoadingSpinner size="sm" />
+              <span className="text-sm text-gray-500">Loading price...</span>
+            </div>
+          ) : priceAvailability?.[0]?.pricing ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-green-600">
+                  ${priceAvailability[0].pricing.customerPrice} {priceAvailability[0].pricing.currencyCode}
+                </span>
+              </div>
+              {priceAvailability[0].pricing.retailPrice > priceAvailability[0].pricing.customerPrice && (
+                <div className="text-sm text-gray-500 line-through">
+                  MSRP: ${priceAvailability[0].pricing.retailPrice} {priceAvailability[0].pricing.currencyCode}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                Price available on request
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Availability */}
         <div className="mt-2">
-          <p className="text-sm text-gray-600">
-            Check availability for pricing
-          </p>
+          {priceLoading ? (
+            <p className="text-sm text-gray-500">Checking availability...</p>
+          ) : priceAvailability?.[0]?.availability ? (
+            <div className="flex items-center gap-2">
+              {priceAvailability[0].availability.available ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600 font-medium">
+                    In Stock ({priceAvailability[0].availability.totalAvailability})
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-red-600 font-medium">Out of Stock</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Check availability for pricing
+            </p>
+          )}
         </div>
 
         {/* Add to Cart */}
         <div className="mt-4">
           <Button
             onClick={() => onAddToCart?.(product)}
-            disabled={product.discontinued === 'True' || product.authorizedToPurchase === 'False'}
+            disabled={
+              product.discontinued === 'True' || 
+              product.authorizedToPurchase === 'False' ||
+              (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
+            }
             className="w-full"
           >
-            {product.discontinued === 'True'
+            {priceLoading ? 'Loading...' : 
+             product.discontinued === 'True'
               ? 'Discontinued' 
               : product.authorizedToPurchase === 'False'
                 ? 'Not Authorized'
-                : 'Add to Cart'
+                : (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
+                  ? 'Out of Stock'
+                  : 'Add to Cart'
             }
           </Button>
         </div>
