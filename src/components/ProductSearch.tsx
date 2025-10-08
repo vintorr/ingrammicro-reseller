@@ -28,8 +28,6 @@ const ProductSearch = () => {
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
   const { addToCart } = useCart();
 
-  // Debug logging
-  console.log('ProductSearch: Current state:', { products: products.length, loading, error, totalPages, currentPage });
 
   // Batch fetch price and availability for all products
   const fetchBatchPriceAndAvailability = async (products: Product[]) => {
@@ -65,9 +63,6 @@ const ProductSearch = () => {
 
   // Load initial products on component mount
   useEffect(() => {
-    console.log('ProductSearch: Component mounted, loading initial products...');
-    console.log('ProductSearch: searchProducts function:', searchProducts);
-    console.log('ProductSearch: Current state:', { products: products.length, loading, error, totalPages, currentPage });
     searchProducts({ pageNumber: 1, pageSize: 20 });
   }, [searchProducts]);
 
@@ -125,10 +120,7 @@ const ProductSearch = () => {
   };
 
   const handlePageChange = (page: number) => {
-    console.log('ProductSearch: handlePageChange called with page:', page);
-    console.log('ProductSearch: Current filters:', filters);
     setFilters(prev => ({ ...prev, pageNumber: page }));
-    console.log('ProductSearch: Filters updated, calling searchProducts...');
     searchProducts({ ...filters, pageNumber: page });
   };
 
@@ -258,10 +250,7 @@ const ProductSearch = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      console.log('ProductSearch: Previous button clicked');
-                      handlePageChange(currentPage - 1);
-                    }}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -280,10 +269,7 @@ const ProductSearch = () => {
                           key={1}
                           variant={currentPage === 1 ? 'primary' : 'ghost'}
                           size="sm"
-                          onClick={() => {
-                            console.log('ProductSearch: First page button clicked');
-                            handlePageChange(1);
-                          }}
+                          onClick={() => handlePageChange(1)}
                         >
                           1
                         </Button>
@@ -300,10 +286,7 @@ const ProductSearch = () => {
                           key={i}
                           variant={currentPage === i ? 'primary' : 'ghost'}
                           size="sm"
-                          onClick={() => {
-                            console.log('ProductSearch: Page number button clicked:', i);
-                            handlePageChange(i);
-                          }}
+                          onClick={() => handlePageChange(i)}
                         >
                           {i}
                         </Button>
@@ -320,10 +303,7 @@ const ProductSearch = () => {
                           key={totalPages}
                           variant={currentPage === totalPages ? 'primary' : 'ghost'}
                           size="sm"
-                          onClick={() => {
-                            console.log('ProductSearch: Last page button clicked');
-                            handlePageChange(totalPages);
-                          }}
+                          onClick={() => handlePageChange(totalPages)}
                         >
                           {totalPages}
                         </Button>
@@ -337,10 +317,7 @@ const ProductSearch = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      console.log('ProductSearch: Next button clicked');
-                      handlePageChange(currentPage + 1);
-                    }}
+                    onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                   >
                     Next

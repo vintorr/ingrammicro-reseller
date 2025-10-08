@@ -7,8 +7,6 @@ export default function TestComponent() {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    console.log('TestComponent: useEffect called');
-    
     const testSteps = async () => {
       setStep(1);
       setMessage('Step 1: Component mounted');
@@ -19,18 +17,15 @@ export default function TestComponent() {
       
       try {
         const response = await fetch('/api/ingram/products?pageSize=2');
-        console.log('TestComponent: Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('TestComponent: API response:', data);
         setMessage(`Step 3: API working! Found ${data.catalog?.length || 0} products`);
         setStep(3);
       } catch (error) {
-        console.error('TestComponent: API error:', error);
         setMessage(`Step 3: API error: ${error.message}`);
         setStep(3);
       }

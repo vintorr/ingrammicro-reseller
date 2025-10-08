@@ -50,7 +50,6 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
           // Filter out invalid orders and ensure unique keys
           const validOrders = (data.orders || []).filter((order, index) => {
             if (!order || !order.ingramOrderNumber) {
-              console.warn(`Invalid order at index ${index}:`, order);
               return false;
             }
             return true;
@@ -101,16 +100,12 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
     setError(null);
 
     try {
-      console.log('Attempting to cancel order:', orderNumber);
-      
       const response = await fetch(`/api/ingram/orders/${orderNumber}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
-      console.log('Order cancellation response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -125,7 +120,6 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
       }
 
       const result = await response.json();
-      console.log('Order cancellation successful:', result);
 
       // Refresh the orders list
       await loadOrders();
