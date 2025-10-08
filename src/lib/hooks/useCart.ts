@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store/store';
-import { addItem, removeItem, updateQuantity, clearCart, toggleCart } from '../store/cartSlice';
+import { addItem, removeItem, updateQuantity, clearCart, toggleCart, createOrder } from '../store/cartSlice';
 import type { CartItem } from '../types';
 
 export function useCart() {
@@ -31,6 +31,24 @@ export function useCart() {
     dispatch(toggleCart());
   };
 
+  const createOrderFromCart = async (customerOrderNumber: string, notes?: string) => {
+    if (cart.items.length === 0) {
+      throw new Error('Cart is empty');
+    }
+
+    const lines = cart.items.map((item, index) => ({
+      customerLineNumber: (index + 1).toString(),
+      ingramPartNumber: item.product.ingramPartNumber,
+      quantity: item.quantity,
+    }));
+
+    return dispatch(createOrder({
+      customerOrderNumber,
+      notes,
+      lines,
+    }));
+  };
+
   return {
     ...cart,
     addToCart,
@@ -38,5 +56,6 @@ export function useCart() {
     updateCartQuantity,
     clearCartItems,
     toggleCartDrawer,
+    createOrderFromCart,
   };
 }

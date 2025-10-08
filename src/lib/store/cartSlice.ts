@@ -1,5 +1,47 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import type { CartItem } from '../types';
+
+// Async thunk for creating order
+export const createOrder = createAsyncThunk(
+  'cart/createOrder',
+  async (orderData: {
+    customerOrderNumber: string;
+    notes?: string;
+    lines: Array<{
+      customerLineNumber: string;
+      ingramPartNumber: string;
+      quantity: number;
+    }>;
+  }, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/ingram/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...orderData,
+          additionalAttributes: [
+            {
+              attributeName: 'allowDuplicateCustomerOrderNumber',
+              attributeValue: 'true'
+            }
+          ]
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create order');
+      }
+
+      const result = await response.json();
+      return result.orderNumber || result.customerOrderNumber;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+);
 
 interface CartState {
   items: CartItem[];
@@ -8,6 +50,9 @@ interface CartState {
   subtotal: number;
   tax: number;
   total: number;
+  isCreatingOrder: boolean;
+  lastOrderId: string | null;
+  orderError: string | null;
 }
 
 const initialState: CartState = {
@@ -17,6 +62,9 @@ const initialState: CartState = {
   subtotal: 0,
   tax: 0,
   total: 0,
+  isCreatingOrder: false,
+  lastOrderId: null,
+  orderError: null,
 };
 
 export const cartSlice = createSlice({
@@ -86,6 +134,54 @@ export const cartSlice = createSlice({
     setCartOpen: (state, action: PayloadAction<boolean>) => {
       state.isOpen = action.payload;
     },
+
+    createOrderStart: (state) => {
+      state.isCreatingOrder = true;
+      state.orderError = null;
+    },
+
+    createOrderSuccess: (state, action: PayloadAction<string>) => {
+      state.isCreatingOrder = false;
+      state.lastOrderId = action.payload;
+      state.orderError = null;
+      // Clear cart after successful order
+      state.items = [];
+      state.totalItems = 0;
+      state.subtotal = 0;
+      state.tax = 0;
+      state.total = 0;
+    },
+
+    createOrderFailure: (state, action: PayloadAction<string>) => {
+      state.isCreatingOrder = false;
+      state.orderError = action.payload;
+    },
+
+    clearOrderError: (state) => {
+      state.orderError = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(createOrder.pending, (state) => {
+        state.isCreatingOrder = true;
+        state.orderError = null;
+      })
+      .addCase(createOrder.fulfilled, (state, action) => {
+        state.isCreatingOrder = false;
+        state.lastOrderId = action.payload;
+        state.orderError = null;
+        // Clear cart after successful order
+        state.items = [];
+        state.totalItems = 0;
+        state.subtotal = 0;
+        state.tax = 0;
+        state.total = 0;
+      })
+      .addCase(createOrder.rejected, (state, action) => {
+        state.isCreatingOrder = false;
+        state.orderError = action.payload as string;
+      });
   },
 });
 
@@ -95,5 +191,9 @@ export const {
   updateQuantity, 
   clearCart, 
   toggleCart, 
-  setCartOpen 
+  setCartOpen,
+  createOrderStart,
+  createOrderSuccess,
+  createOrderFailure,
+  clearOrderError
 } = cartSlice.actions;

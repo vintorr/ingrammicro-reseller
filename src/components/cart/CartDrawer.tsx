@@ -1,11 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useCart } from '@/lib/hooks/useCart';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { formatCurrency } from '@/lib/utils/formatters';
-import { X, ShoppingCart, Trash2 } from 'lucide-react';
+import { X, ShoppingCart, Trash2, CheckCircle } from 'lucide-react';
 import type { CartItem } from '@/lib/types';
 
 interface CartDrawerProps {
@@ -22,8 +23,32 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     total, 
     removeFromCart, 
     updateCartQuantity, 
-    clearCartItems 
+    clearCartItems,
+    createOrderFromCart,
+    isCreatingOrder,
+    lastOrderId,
+    orderError
   } = useCart();
+
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [customerOrderNumber, setCustomerOrderNumber] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const handleCheckout = async () => {
+    if (!customerOrderNumber.trim()) {
+      alert('Please enter a customer order number');
+      return;
+    }
+
+    try {
+      await createOrderFromCart(customerOrderNumber, notes);
+      setShowCheckout(false);
+      setCustomerOrderNumber('');
+      setNotes('');
+    } catch (error) {
+      console.error('Checkout error:', error);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -107,18 +132,87 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
               {/* Actions */}
               <div className="space-y-2">
-                <Button className="w-full">
-                  Proceed to Checkout
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearCartItems}
-                  className="w-full text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear Cart
-                </Button>
+                {!showCheckout ? (
+                  <>
+                    <Button 
+                      className="w-full"
+                      onClick={() => setShowCheckout(true)}
+                    >
+                      Proceed to Checkout
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearCartItems}
+                      className="w-full text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Clear Cart
+                    </Button>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Customer Order Number *
+                      </label>
+                      <input
+                        type="text"
+                        value={customerOrderNumber}
+                        onChange={(e) => setCustomerOrderNumber(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter order number"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes (Optional)
+                      </label>
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Add any notes for this order"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setShowCheckout(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleCheckout}
+                        disabled={isCreatingOrder || !customerOrderNumber.trim()}
+                        className="flex-1"
+                      >
+                        {isCreatingOrder ? (
+                          <>
+                            <LoadingSpinner size="sm" className="mr-2" />
+                            Creating Order...
+                          </>
+                        ) : (
+                          'Create Order'
+                        )}
+                      </Button>
+                    </div>
+                    {orderError && (
+                      <div className="text-red-600 text-sm">
+                        Error: {orderError}
+                      </div>
+                    )}
+                    {lastOrderId && (
+                      <div className="text-green-600 text-sm flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Order created successfully! Order ID: {lastOrderId}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -136,17 +230,21 @@ interface CartItemProps {
 
 function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   const { product, quantity, totalPrice } = item;
-  const primaryImage = product.images.find(img => img.primary) || product.images[0];
+  const primaryImage = product.images?.find(img => img.primary) || product.images?.[0];
 
   return (
     <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
       {/* Product Image */}
-      <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden">
-        <img
-          src={primaryImage?.url || '/images/placeholder.jpg'}
-          alt={product.description}
-          className="w-full h-full object-cover"
-        />
+      <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+        {primaryImage?.url ? (
+          <img
+            src={primaryImage.url}
+            alt={product.description}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-gray-400 text-xs">No Image</span>
+        )}
       </div>
 
       {/* Product Details */}
@@ -158,7 +256,7 @@ function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
           SKU: {product.ingramPartNumber}
         </p>
         <p className="text-sm text-gray-600 mt-1">
-          {formatCurrency(item.unitPrice, product.price.currency)} each
+          {formatCurrency(item.unitPrice, 'USD')} each
         </p>
       </div>
 
@@ -179,7 +277,6 @@ function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
           variant="ghost"
           size="sm"
           onClick={() => onUpdateQuantity(product.ingramPartNumber, quantity + 1)}
-          disabled={quantity >= product.availability.quantity}
         >
           +
         </Button>
@@ -188,7 +285,7 @@ function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
       {/* Total Price */}
       <div className="text-right">
         <p className="text-sm font-medium text-gray-900">
-          {formatCurrency(totalPrice, product.price.currency)}
+          {formatCurrency(totalPrice, 'USD')}
         </p>
       </div>
 

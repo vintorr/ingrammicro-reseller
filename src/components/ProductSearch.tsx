@@ -98,9 +98,20 @@ const ProductSearch = () => {
   };
 
   const handleAddToCart = (product: Product) => {
-    // Note: Price information is not available in catalog search
-    // User will need to check price & availability first
-    alert('Please check price & availability first before adding to cart');
+    // Get price/availability data for this product
+    const productPriceAvailability = getProductPriceAvailability(product.ingramPartNumber);
+    
+    if (productPriceAvailability?.pricing && productPriceAvailability?.availability?.available) {
+      const cartItem = {
+        product,
+        quantity: 1,
+        unitPrice: productPriceAvailability.pricing.customerPrice,
+        totalPrice: productPriceAvailability.pricing.customerPrice,
+      };
+      addToCart(cartItem);
+    } else {
+      alert('Product not available or price not loaded. Please try again.');
+    }
   };
 
   const handleViewDetails = (product: Product) => {
