@@ -1,19 +1,31 @@
 'use client';
 
 import { useState } from 'react';
+import { Search, DollarSign, Package, FileText, ShoppingCart } from 'lucide-react';
 import ProductSearch from './ProductSearch';
 import PriceAvailability from './PriceAvailability';
 import OrderManagement from './OrderManagement';
 import QuoteManagement from './QuoteManagement';
+import { CartDrawer } from './cart/CartDrawer';
+import { useCart } from '@/lib/hooks/useCart';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
+
+interface Tab {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
+  const { totalItems, isOpen, toggleCartDrawer } = useCart();
 
-  const tabs = [
-    { id: 'products', label: 'Product Search', icon: '🔍' },
-    { id: 'pricing', label: 'Price & Availability', icon: '💰' },
-    { id: 'orders', label: 'Order Management', icon: '📦' },
-    { id: 'quotes', label: 'Quote Management', icon: '📋' },
+  const tabs: Tab[] = [
+    { id: 'products', label: 'Product Search', icon: <Search className="w-4 h-4" /> },
+    { id: 'pricing', label: 'Price & Availability', icon: <DollarSign className="w-4 h-4" /> },
+    { id: 'orders', label: 'Order Management', icon: <Package className="w-4 h-4" /> },
+    { id: 'quotes', label: 'Quote Management', icon: <FileText className="w-4 h-4" /> },
   ];
 
   const renderActiveTab = () => {
@@ -43,8 +55,23 @@ const Dashboard = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                onClick={toggleCartDrawer}
+                className="relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <Badge 
+                    variant="error" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {totalItems}
+                  </Badge>
+                )}
+              </Button>
               <div className="text-sm text-gray-500">
-                Powered by Xvantage Integration
+                Powered by Next.js & TypeScript
               </div>
             </div>
           </div>
@@ -59,13 +86,13 @@ const Dashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
+                {tab.icon}
                 {tab.label}
               </button>
             ))}
@@ -79,6 +106,12 @@ const Dashboard = () => {
           {renderActiveTab()}
         </div>
       </main>
+
+      {/* Cart Drawer */}
+      <CartDrawer 
+        isOpen={isOpen} 
+        onClose={() => toggleCartDrawer()} 
+      />
     </div>
   );
 };

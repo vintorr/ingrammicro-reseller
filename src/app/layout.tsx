@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { Providers } from './providers';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,16 +14,22 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Ingram Micro Reseller Portal",
-  description: "Reseller portal for Ingram Micro Xvantage integration",
+  description: "Modern reseller portal built with Next.js, TypeScript, and Ingram Micro APIs",
 };
 
-export default function RootLayout({ children }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
