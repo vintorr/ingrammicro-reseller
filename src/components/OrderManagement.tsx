@@ -24,12 +24,53 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showModifyForm, setShowModifyForm] = useState(false);
-  const [modifyLines, setModifyLines] = useState<Array<{
-    customerLineNumber: string;
-    ingramPartNumber: string;
-    addUpdateDeleteLine: 'ADD' | 'UPDATE' | 'DELETE';
-    quantity?: number;
-  }>>([]);
+  const [modifyRequest, setModifyRequest] = useState<{
+    notes: string;
+    shipToInfo: {
+      contact: string;
+      companyName: string;
+      addressLine1: string;
+      addressLine2: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      countryCode: string;
+      phoneNumber: string;
+      email: string;
+    };
+    lines: Array<{
+      customerLineNumber: string;
+      ingramPartNumber: string;
+      addUpdateDeleteLine: 'ADD' | 'UPDATE' | 'DELETE';
+      quantity?: number;
+    }>;
+    additionalAttributes: Array<{
+      attributeName: string;
+      attributeValue: string;
+    }>;
+  }>({
+    notes: '',
+    shipToInfo: {
+      contact: '',
+      companyName: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      countryCode: 'US',
+      phoneNumber: '',
+      email: '',
+    },
+    lines: [],
+    additionalAttributes: [],
+  });
+
+  // Product search for order modification
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showProductSearch, setShowProductSearch] = useState(false);
 
   // Load initial orders
   useEffect(() => {
@@ -94,7 +135,7 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
   };
 
   const handleModifyOrder = async () => {
-    if (!selectedOrder || modifyLines.length === 0) return;
+    if (!selectedOrder || modifyRequest.lines.length === 0) return;
 
     setLoading(true);
     setError(null);
@@ -105,7 +146,7 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ lines: modifyLines }),
+        body: JSON.stringify(modifyRequest),
       });
 
       if (!response.ok) {
@@ -115,7 +156,23 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
       const updatedOrder: Order = await response.json();
       setSelectedOrder(updatedOrder);
       setShowModifyForm(false);
-      setModifyLines([]);
+      setModifyRequest({
+        notes: '',
+        shipToInfo: {
+          contact: '',
+          companyName: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          countryCode: 'US',
+          phoneNumber: '',
+          email: '',
+        },
+        lines: [],
+        additionalAttributes: [],
+      });
       
       // Refresh the orders list
       loadOrders();
@@ -155,22 +212,125 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
   };
 
   const addModifyLine = () => {
-    setModifyLines(prev => [...prev, {
-      customerLineNumber: '',
-      ingramPartNumber: '',
-      addUpdateDeleteLine: 'ADD',
-      quantity: 1,
-    }]);
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: [...prev.lines, {
+        customerLineNumber: '',
+        ingramPartNumber: '',
+        addUpdateDeleteLine: 'ADD',
+        quantity: 1,
+      }]
+    }));
   };
 
   const removeModifyLine = (index: number) => {
-    setModifyLines(prev => prev.filter((_, i) => i !== index));
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: prev.lines.filter((_, i) => i !== index)
+    }));
   };
 
   const updateModifyLine = (index: number, field: string, value: any) => {
-    setModifyLines(prev => prev.map((line, i) => 
-      i === index ? { ...line, [field]: value } : line
-    ));
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: prev.lines.map((line, i) => 
+        i === index ? { ...line, [field]: value } : line
+      )
+    }));
+  };
+
+  const addAdditionalAttribute = () => {
+    setModifyRequest(prev => ({
+      ...prev,
+      additionalAttributes: [...prev.additionalAttributes, {
+        attributeName: '',
+        attributeValue: '',
+      }]
+    }));
+  };
+
+  const removeAdditionalAttribute = (index: number) => {
+    setModifyRequest(prev => ({
+      ...prev,
+      additionalAttributes: prev.additionalAttributes.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateAdditionalAttribute = (index: number, field: string, value: string) => {
+    setModifyRequest(prev => ({
+      ...prev,
+      additionalAttributes: prev.additionalAttributes.map((attr, i) => 
+        i === index ? { ...attr, [field]: value } : attr
+      )
+    }));
+  };
+
+  const updateModifyRequest = (field: string, value: any) => {
+    setModifyRequest(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateShipToInfo = (field: string, value: string) => {
+    setModifyRequest(prev => ({
+      ...prev,
+      shipToInfo: { ...prev.shipToInfo, [field]: value }
+    }));
+  };
+
+  // Product search functionality
+  const searchProducts = async (query: string) => {
+    if (!query.trim()) return;
+    
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`/api/ingram/products?keyword=${encodeURIComponent(query)}&pageSize=10`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.catalog || []);
+      }
+    } catch (err) {
+      console.error('Error searching products:', err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleProductSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    searchProducts(productSearchQuery);
+  };
+
+  const selectProduct = (product: any) => {
+    const newLine = {
+      customerLineNumber: (modifyRequest.lines.length + 1).toString(),
+      ingramPartNumber: product.ingramPartNumber,
+      addUpdateDeleteLine: 'ADD' as const,
+      quantity: 1,
+    };
+    
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: [...prev.lines, newLine]
+    }));
+    
+    setShowProductSearch(false);
+    setProductSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const removeLine = (index: number) => {
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: prev.lines.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateLineQuantity = (index: number, quantity: number) => {
+    setModifyRequest(prev => ({
+      ...prev,
+      lines: prev.lines.map((line, i) => 
+        i === index ? { ...line, quantity } : line
+      )
+    }));
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -558,7 +718,7 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
       {showModifyForm && selectedOrder && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModifyForm(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-xl">
+          <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-xl">
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
@@ -574,84 +734,183 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
               </div>
               
               <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900">Modify Lines</h4>
-                    <Button size="sm" onClick={addModifyLine}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Line
-                    </Button>
+                <div className="space-y-6">
+                  {/* Current Order Products */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Current Order Products</h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      {(() => {
+                        const lines = selectedOrder?.lines || [];
+                        return lines.length > 0 ? (
+                          <div className="space-y-2">
+                            {lines.map((line, index) => (
+                              <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{line.description || 'No description'}</div>
+                                  <div className="text-xs text-gray-500">Part: {line.ingramPartNumber}</div>
+                                  <div className="text-xs text-gray-500">
+                                    Qty: {line.quantity} × {formatCurrency(line.unitPrice || 0, selectedOrder.currencyCode || 'USD')}
+                                  </div>
+                                </div>
+                                <div className="text-sm font-medium">
+                                  {formatCurrency(line.totalPrice || 0, selectedOrder.currencyCode || 'USD')}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No products in this order</p>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  {modifyLines.map((line, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Customer Line Number
-                          </label>
-                          <input
-                            type="text"
-                            value={line.customerLineNumber}
-                            onChange={(e) => updateModifyLine(index, 'customerLineNumber', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Line number"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Ingram Part Number
-                          </label>
-                          <input
-                            type="text"
-                            value={line.ingramPartNumber}
-                            onChange={(e) => updateModifyLine(index, 'ingramPartNumber', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Part number"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Action
-                          </label>
-                          <select
-                            value={line.addUpdateDeleteLine}
-                            onChange={(e) => updateModifyLine(index, 'addUpdateDeleteLine', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="ADD">Add</option>
-                            <option value="UPDATE">Update</option>
-                            <option value="DELETE">Delete</option>
-                          </select>
-                        </div>
-                        {line.addUpdateDeleteLine !== 'DELETE' && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Quantity
-                            </label>
-                            <input
-                              type="number"
-                              value={line.quantity || ''}
-                              onChange={(e) => updateModifyLine(index, 'quantity', parseInt(e.target.value))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Quantity"
-                              min="1"
-                            />
+                  {/* Notes Section */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Order Notes (Optional)
+                    </label>
+                    <textarea
+                      value={modifyRequest.notes}
+                      onChange={(e) => updateModifyRequest('notes', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Add any notes for this order modification"
+                      rows={3}
+                      maxLength={132}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Maximum 132 characters
+                    </p>
+                  </div>
+
+                  {/* Add Products Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-gray-900">Add Products to Order</h4>
+                      <Button 
+                        size="sm" 
+                        onClick={() => setShowProductSearch(true)}
+                        variant="primary"
+                      >
+                        <Search className="w-4 h-4 mr-2" />
+                        Search Products
+                      </Button>
+                    </div>
+
+                    {/* Product Search Modal */}
+                    {showProductSearch && (
+                      <div className="fixed inset-0 z-60 bg-black bg-opacity-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                          <div className="p-4 border-b">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-medium">Search Products</h3>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShowProductSearch(false);
+                                  setProductSearchQuery('');
+                                  setSearchResults([]);
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                            <form onSubmit={handleProductSearch} className="mt-4">
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={productSearchQuery}
+                                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Search for products..."
+                                />
+                                <Button type="submit" disabled={searchLoading}>
+                                  {searchLoading ? (
+                                    <LoadingSpinner size="sm" />
+                                  ) : (
+                                    <Search className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </form>
                           </div>
-                        )}
-                        <div className="flex items-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeModifyLine(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
+                          <div className="max-h-96 overflow-y-auto">
+                            {searchResults.length > 0 ? (
+                              <div className="p-4 space-y-2">
+                                {searchResults.map((product) => (
+                                  <div
+                                    key={product.ingramPartNumber}
+                                    className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => selectProduct(product)}
+                                  >
+                                    <div className="flex-1">
+                                      <div className="font-medium text-sm">{product.description}</div>
+                                      <div className="text-xs text-gray-500">Part: {product.ingramPartNumber}</div>
+                                      <div className="text-xs text-gray-500">Brand: {product.vendorName}</div>
+                                    </div>
+                                    <Button size="sm" variant="ghost">
+                                      <Plus className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : productSearchQuery && !searchLoading ? (
+                              <div className="p-4 text-center text-gray-500">
+                                No products found
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-gray-500">
+                                Enter a search term to find products
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )}
+
+                    {/* Selected Products for Modification */}
+                    {modifyRequest.lines.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <h5 className="text-sm font-medium text-gray-700">Products to Add:</h5>
+                        {modifyRequest.lines.map((line, index) => (
+                          <div key={index} className="flex items-center justify-between bg-blue-50 p-3 rounded border">
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">Part: {line.ingramPartNumber}</div>
+                              <div className="text-xs text-gray-500">Line: {line.customerLineNumber}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => updateLineQuantity(index, Math.max(1, (line.quantity || 1) - 1))}
+                                >
+                                  -
+                                </Button>
+                                <span className="w-8 text-center text-sm">{line.quantity || 1}</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => updateLineQuantity(index, (line.quantity || 1) + 1)}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeLine(index)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex justify-end space-x-2 pt-4">
                     <Button
@@ -662,7 +921,7 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                     </Button>
                     <Button
                       onClick={handleModifyOrder}
-                      disabled={modifyLines.length === 0 || loading}
+                      disabled={modifyRequest.lines.length === 0 || loading}
                     >
                       {loading ? (
                         <>

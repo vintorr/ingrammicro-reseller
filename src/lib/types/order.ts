@@ -154,11 +154,28 @@ export interface OrderSearchRequest {
 }
 
 export interface OrderModifyRequest {
+  notes?: string;
+  shipToInfo?: {
+    contact: string;
+    companyName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    countryCode: string;
+    phoneNumber: string;
+    email: string;
+  };
   lines: Array<{
     customerLineNumber: string;
     ingramPartNumber: string;
     addUpdateDeleteLine: 'ADD' | 'UPDATE' | 'DELETE';
     quantity?: number;
+  }>;
+  additionalAttributes?: Array<{
+    attributeName: string;
+    attributeValue: string;
   }>;
 }
 
