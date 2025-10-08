@@ -63,10 +63,13 @@ export interface OrderLine {
   customerLineNumber: string;
   ingramPartNumber: string;
   vendorPartNumber: string;
-  description: string;
-  quantity: number;
+  description?: string; // Legacy field
+  partDescription?: string; // Actual API field
+  quantity?: number; // Legacy field
+  quantityOrdered?: number; // Actual API field
   unitPrice: number;
-  totalPrice: number;
+  totalPrice?: number; // Legacy field
+  extendedPrice?: number; // Actual API field
   status: string;
   addUpdateDeleteLine?: string;
 }
@@ -111,17 +114,17 @@ export interface TrackingInfo {
 }
 
 export interface OrderCreateRequest {
-  customerOrderNumber?: string;
-  endCustomerOrderNumber?: string;
-  items: Array<{
+  customerOrderNumber: string;
+  notes?: string;
+  lines: Array<{
+    customerLineNumber: string;
     ingramPartNumber: string;
     quantity: number;
-    unitPrice?: number;
   }>;
-  shippingAddress: ShippingAddress;
-  billingAddress?: ShippingAddress;
-  shippingMethod?: string;
-  notes?: string;
+  additionalAttributes?: Array<{
+    attributeName: string;
+    attributeValue: string;
+  }>;
 }
 
 export interface OrderCreateResponse {
@@ -129,7 +132,7 @@ export interface OrderCreateResponse {
   orderId: string;
   status: string;
   orderTotal: number;
-  items: OrderItem[];
+  items: OrderLine[];
   estimatedDelivery?: string;
 }
 

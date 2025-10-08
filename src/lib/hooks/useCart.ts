@@ -46,7 +46,7 @@ export function useCart() {
       customerOrderNumber,
       notes,
       lines,
-    }));
+    }) as any);
   };
 
   return {

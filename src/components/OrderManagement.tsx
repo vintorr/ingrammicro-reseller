@@ -691,16 +691,16 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                               {line.ingramPartNumber}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900">
-                              {line.description}
+                              {line.partDescription || line.description || 'No description'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {line.quantity}
+                              {line.quantityOrdered || line.quantity || 0}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {formatCurrency(line.unitPrice, selectedOrder.currencyCode)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {formatCurrency(line.totalPrice, selectedOrder.currencyCode)}
+                              {formatCurrency(line.extendedPrice || line.totalPrice, selectedOrder.currencyCode)}
                             </td>
                           </tr>
                         ))}
@@ -746,14 +746,14 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                             {lines.map((line, index) => (
                               <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
                                 <div className="flex-1">
-                                  <div className="font-medium text-sm">{line.description || 'No description'}</div>
+                                  <div className="font-medium text-sm">{line.partDescription || line.description || 'No description'}</div>
                                   <div className="text-xs text-gray-500">Part: {line.ingramPartNumber}</div>
                                   <div className="text-xs text-gray-500">
-                                    Qty: {line.quantity} × {formatCurrency(line.unitPrice || 0, selectedOrder.currencyCode || 'USD')}
+                                    Qty: {line.quantityOrdered || line.quantity || 0} × {formatCurrency(line.unitPrice || 0, selectedOrder.currencyCode || 'USD')}
                                   </div>
                                 </div>
                                 <div className="text-sm font-medium">
-                                  {formatCurrency(line.totalPrice || 0, selectedOrder.currencyCode || 'USD')}
+                                  {formatCurrency(line.extendedPrice || line.totalPrice || 0, selectedOrder.currencyCode || 'USD')}
                                 </div>
                               </div>
                             ))}

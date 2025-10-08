@@ -8,6 +8,7 @@ import type {
 export class OrdersApi {
   async createOrder(request: OrderCreateRequest): Promise<OrderCreateResponse> {
     const endpoint = '/resellers/v6/orders';
+    console.log('OrdersApi - Creating order with data:', JSON.stringify(request, null, 2));
     return apiClient.post<OrderCreateResponse>(endpoint, request);
   }
 

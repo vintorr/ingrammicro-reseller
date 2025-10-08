@@ -7,7 +7,11 @@ export async function GET(
 ) {
   try {
     const { orderNumber } = params;
+    console.log('Fetching order details for:', orderNumber);
+    
     const orderDetails = await ordersApi.getOrderDetails(orderNumber);
+    
+    console.log('Order details response:', JSON.stringify(orderDetails, null, 2));
 
     return NextResponse.json(orderDetails);
   } catch (error) {
