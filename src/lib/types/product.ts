@@ -90,10 +90,32 @@ export interface PriceAvailabilityRequest {
   }>;
 }
 
-export interface PriceAvailabilityResponse {
-  products: Array<{
-    ingramPartNumber: string;
-    pricing: Price;
-    availability: Availability;
-  }>;
-}
+export interface PriceAvailabilityResponse extends Array<{
+  index: number;
+  productStatusCode: string;
+  productStatusMessage: string;
+  ingramPartNumber: string;
+  vendorPartNumber: string;
+  upc: string;
+  errorCode: string;
+  availability: {
+    available: boolean;
+    totalAvailability: number;
+    availabilityByWarehouse: Array<{
+      quantityAvailable: number;
+      warehouseId: string;
+      location: string;
+      quantityBackordered: number;
+      quantityBackorderedEta: string;
+      quantityOnOrder: number;
+    }>;
+  };
+  pricing: {
+    mapPrice: number;
+    currencyCode: string;
+    retailPrice: number;
+    customerPrice: number;
+  };
+  discounts: any[];
+  subscriptionPrice: any[];
+}> {}

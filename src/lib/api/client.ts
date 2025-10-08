@@ -79,6 +79,9 @@ export class ApiClient {
   async post<T>(endpoint: string, data?: any): Promise<T> {
     return this.makeRequest<T>(endpoint, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: data ? JSON.stringify(data) : undefined,
     });
   }

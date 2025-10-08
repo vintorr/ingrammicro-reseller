@@ -21,7 +21,7 @@ export class ProductsApi {
   async getPriceAndAvailability(
     request: PriceAvailabilityRequest
   ): Promise<PriceAvailabilityResponse> {
-    const endpoint = '/resellers/v6/catalog/priceandavailability';
+    const endpoint = '/resellers/v6/catalog/priceandavailability?includeAvailability=true&includePricing=true';
     return apiClient.post<PriceAvailabilityResponse>(endpoint, request);
   }
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Package, DollarSign, Truck, Star, AlertCircle } from 'lucide-react';
+import { X, Package, DollarSign, Truck, Star, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import type { Product } from '../../lib/types';
+import type { Product, PriceAvailabilityResponse } from '../../lib/types';
 
 interface ProductDetailsModalProps {
   productId: string;
@@ -15,12 +15,15 @@ interface ProductDetailsModalProps {
 
 export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetailsModalProps) {
   const [product, setProduct] = useState<Product | null>(null);
+  const [priceAvailability, setPriceAvailability] = useState<PriceAvailabilityResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && productId) {
       fetchProductDetails();
+      fetchPriceAndAvailability();
     }
   }, [isOpen, productId]);
 
@@ -41,6 +44,41 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
       setError(err instanceof Error ? err.message : 'Failed to load product details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPriceAndAvailability = async () => {
+    setPriceLoading(true);
+    
+    try {
+      const response = await fetch('/api/ingram/price-availability', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          products: [
+            {
+              ingramPartNumber: productId
+            }
+          ]
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Price availability API error:', errorData);
+        // Don't throw error, just log it and continue without price data
+        return;
+      }
+      
+      const data = await response.json();
+      setPriceAvailability(data);
+    } catch (err) {
+      console.error('Error fetching price and availability:', err);
+      // Don't set error state for price/availability failures, just log them
+    } finally {
+      setPriceLoading(false);
     }
   };
 
@@ -167,19 +205,51 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                     <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       <DollarSign className="h-5 w-5" />
                       Pricing & Availability
+                      {priceLoading && <LoadingSpinner size="sm" />}
                     </h4>
                     <div className="space-y-3">
                       <div>
                         <span className="text-sm font-medium text-gray-500">Price:</span>
-                        <p className="text-gray-900">
-                          Price available on request
-                        </p>
+                        {priceLoading ? (
+                          <p className="text-gray-500">Loading price...</p>
+                        ) : priceAvailability?.[0]?.pricing ? (
+                          <div className="space-y-1">
+                            <p className="text-lg font-semibold text-green-600">
+                              ${priceAvailability[0].pricing.customerPrice} {priceAvailability[0].pricing.currencyCode}
+                            </p>
+                            {priceAvailability[0].pricing.retailPrice > priceAvailability[0].pricing.customerPrice && (
+                              <p className="text-sm text-gray-500 line-through">
+                                MSRP: ${priceAvailability[0].pricing.retailPrice} {priceAvailability[0].pricing.currencyCode}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-900">Price available on request</p>
+                        )}
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Availability:</span>
-                        <p className="text-gray-900">
-                          Check availability for pricing
-                        </p>
+                        {priceLoading ? (
+                          <p className="text-gray-500">Checking availability...</p>
+                        ) : priceAvailability?.[0]?.availability ? (
+                          <div className="flex items-center gap-2">
+                            {priceAvailability[0].availability.available ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <span className="text-green-600 font-medium">
+                                  In Stock ({priceAvailability[0].availability.totalAvailability} units)
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <span className="text-red-600 font-medium">Out of Stock</span>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-900">Check availability for pricing</p>
+                        )}
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Authorized to Purchase:</span>
@@ -215,9 +285,13 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                   <div className="flex items-center gap-4">
                     <Button
                       variant="primary"
-                      disabled={product.discontinued === 'True' || product.authorizedToPurchase === 'False'}
+                      disabled={
+                        product.discontinued === 'True' || 
+                        product.authorizedToPurchase === 'False' ||
+                        (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
+                      }
                     >
-                      Add to Cart
+                      {priceLoading ? 'Loading...' : 'Add to Cart'}
                     </Button>
                     <Button variant="secondary">
                       Request Quote
