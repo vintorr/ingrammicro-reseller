@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, List, Package, Calendar, DollarSign, User, MapPin, Truck, Eye, Edit, Trash2, Plus, Minus } from 'lucide-react';
+import { Search, List, Package, Calendar, DollarSign, User, MapPin, Truck, Eye, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import type { Order, OrderSearchRequest, OrderSearchResponse, OrderModifyRequest } from '@/lib/types';
+import type { Order, OrderSearchRequest, OrderSearchResponse } from '@/lib/types';
 
 interface OrderManagementProps {}
 
@@ -23,54 +23,6 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [showModifyForm, setShowModifyForm] = useState(false);
-  const [modifyRequest, setModifyRequest] = useState<{
-    notes: string;
-    shipToInfo: {
-      contact: string;
-      companyName: string;
-      addressLine1: string;
-      addressLine2: string;
-      city: string;
-      state: string;
-      postalCode: string;
-      countryCode: string;
-      phoneNumber: string;
-      email: string;
-    };
-    lines: Array<{
-      customerLineNumber: string;
-      ingramPartNumber: string;
-      addUpdateDeleteLine: 'ADD' | 'UPDATE' | 'DELETE';
-      quantity?: number;
-    }>;
-    additionalAttributes: Array<{
-      attributeName: string;
-      attributeValue: string;
-    }>;
-  }>({
-    notes: '',
-    shipToInfo: {
-      contact: '',
-      companyName: '',
-      addressLine1: '',
-      addressLine2: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      countryCode: 'US',
-      phoneNumber: '',
-      email: '',
-    },
-    lines: [],
-    additionalAttributes: [],
-  });
-
-  // Product search for order modification
-  const [productSearchQuery, setProductSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [showProductSearch, setShowProductSearch] = useState(false);
 
   // Load initial orders
   useEffect(() => {
@@ -134,203 +86,57 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
     }
   };
 
-  const handleModifyOrder = async () => {
-    if (!selectedOrder || modifyRequest.lines.length === 0) return;
+  const handleCancelOrder = async (orderNumber: string) => {
+    if (!confirm('Are you sure you want to cancel this order? This action cannot be undone.')) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/ingram/orders/${selectedOrder.ingramOrderNumber}`, {
-        method: 'PUT',
+      console.log('Attempting to cancel order:', orderNumber);
+      
+      const response = await fetch(`/api/ingram/orders/${orderNumber}`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(modifyRequest),
       });
+
+      console.log('Order cancellation response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorData = await response.json();
+        console.error('Order cancellation error response:', errorData);
+        
+        // Handle specific error cases
+        if (response.status === 501) {
+          throw new Error(errorData.message || 'Order cancellation is not supported by the Ingram Micro API. Please contact Ingram Micro support to cancel this order.');
+        }
+        
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const updatedOrder: Order = await response.json();
-      setSelectedOrder(updatedOrder);
-      setShowModifyForm(false);
-      setModifyRequest({
-        notes: '',
-        shipToInfo: {
-          contact: '',
-          companyName: '',
-          addressLine1: '',
-          addressLine2: '',
-          city: '',
-          state: '',
-          postalCode: '',
-          countryCode: 'US',
-          phoneNumber: '',
-          email: '',
-        },
-        lines: [],
-        additionalAttributes: [],
-      });
-      
-      // Refresh the orders list
-      loadOrders();
-    } catch (err) {
-      console.error('Error modifying order:', err);
-      setError(err instanceof Error ? err.message : 'Failed to modify order');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancelOrder = async (orderNumber: string) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/ingram/orders/${orderNumber}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      const result = await response.json();
+      console.log('Order cancellation successful:', result);
 
       // Refresh the orders list
-      loadOrders();
+      await loadOrders();
       setShowOrderDetails(false);
       setSelectedOrder(null);
+      
+      // Show success message
+      alert('Order cancelled successfully');
     } catch (err) {
       console.error('Error cancelling order:', err);
-      setError(err instanceof Error ? err.message : 'Failed to cancel order');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel order';
+      
+      // Show user-friendly error message
+      alert(`❌ Order Cancellation Failed\n\n${errorMessage}`);
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  const addModifyLine = () => {
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: [...prev.lines, {
-        customerLineNumber: '',
-        ingramPartNumber: '',
-        addUpdateDeleteLine: 'ADD',
-        quantity: 1,
-      }]
-    }));
-  };
-
-  const removeModifyLine = (index: number) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: prev.lines.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateModifyLine = (index: number, field: string, value: any) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: prev.lines.map((line, i) => 
-        i === index ? { ...line, [field]: value } : line
-      )
-    }));
-  };
-
-  const addAdditionalAttribute = () => {
-    setModifyRequest(prev => ({
-      ...prev,
-      additionalAttributes: [...prev.additionalAttributes, {
-        attributeName: '',
-        attributeValue: '',
-      }]
-    }));
-  };
-
-  const removeAdditionalAttribute = (index: number) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      additionalAttributes: prev.additionalAttributes.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateAdditionalAttribute = (index: number, field: string, value: string) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      additionalAttributes: prev.additionalAttributes.map((attr, i) => 
-        i === index ? { ...attr, [field]: value } : attr
-      )
-    }));
-  };
-
-  const updateModifyRequest = (field: string, value: any) => {
-    setModifyRequest(prev => ({ ...prev, [field]: value }));
-  };
-
-  const updateShipToInfo = (field: string, value: string) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      shipToInfo: { ...prev.shipToInfo, [field]: value }
-    }));
-  };
-
-  // Product search functionality
-  const searchProducts = async (query: string) => {
-    if (!query.trim()) return;
-    
-    setSearchLoading(true);
-    try {
-      const response = await fetch(`/api/ingram/products?keyword=${encodeURIComponent(query)}&pageSize=10`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.catalog || []);
-      }
-    } catch (err) {
-      console.error('Error searching products:', err);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  const handleProductSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    searchProducts(productSearchQuery);
-  };
-
-  const selectProduct = (product: any) => {
-    const newLine = {
-      customerLineNumber: (modifyRequest.lines.length + 1).toString(),
-      ingramPartNumber: product.ingramPartNumber,
-      addUpdateDeleteLine: 'ADD' as const,
-      quantity: 1,
-    };
-    
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: [...prev.lines, newLine]
-    }));
-    
-    setShowProductSearch(false);
-    setProductSearchQuery('');
-    setSearchResults([]);
-  };
-
-  const removeLine = (index: number) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: prev.lines.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateLineQuantity = (index: number, quantity: number) => {
-    setModifyRequest(prev => ({
-      ...prev,
-      lines: prev.lines.map((line, i) => 
-        i === index ? { ...line, quantity } : line
-      )
-    }));
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -514,40 +320,17 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleViewOrder(order.ingramOrderNumber)}
+                          title="View order details"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={async () => {
-                            setLoading(true);
-                            setError(null);
-                            
-                            try {
-                              const response = await fetch(`/api/ingram/orders/${order.ingramOrderNumber}`);
-                              if (!response.ok) {
-                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                              }
-                              
-                              const orderDetails: Order = await response.json();
-                              setSelectedOrder(orderDetails);
-                              setShowModifyForm(true);
-                            } catch (err) {
-                              setError(err instanceof Error ? err.message : 'Failed to load order details');
-                            } finally {
-                              setLoading(false);
-                            }
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {order.orderStatus !== 'Cancelled' && (
+                        {order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Shipped' && order.orderStatus !== 'Delivered' && (
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCancelOrder(order.ingramOrderNumber)}
                             className="text-red-600 hover:text-red-800"
+                            title="Cancel this order"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -700,255 +483,51 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedOrder.lines.map((line, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {line.ingramPartNumber}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900">
-                              {line.partDescription || line.description || 'No description'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {line.quantityOrdered || line.quantity || 0}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatCurrency(line.unitPrice, selectedOrder.currencyCode)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {formatCurrency(line.extendedPrice || line.totalPrice, selectedOrder.currencyCode)}
+                        {selectedOrder.lines && selectedOrder.lines.length > 0 ? (
+                          selectedOrder.lines.map((line, index) => (
+                            <tr key={index}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {line.ingramPartNumber}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {line.partDescription || line.description || 'No description'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {line.quantityOrdered || line.quantity || 0}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {formatCurrency(line.unitPrice || 0, selectedOrder.currencyCode)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {formatCurrency(line.extendedPrice || line.totalPrice || 0, selectedOrder.currencyCode)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                              No products in this order
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Modify Order Modal */}
-      {showModifyForm && selectedOrder && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModifyForm(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-xl">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Modify Order - {selectedOrder.ingramOrderNumber}
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowModifyForm(false)}
-                >
-                  ×
-                </Button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-6">
-                  {/* Current Order Products */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Current Order Products</h4>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      {(() => {
-                        const lines = selectedOrder?.lines || [];
-                        return lines.length > 0 ? (
-                          <div className="space-y-2">
-                            {lines.map((line, index) => (
-                              <div key={index} className="flex items-center justify-between bg-white p-3 rounded border">
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">{line.partDescription || line.description || 'No description'}</div>
-                                  <div className="text-xs text-gray-500">Part: {line.ingramPartNumber}</div>
-                                  <div className="text-xs text-gray-500">
-                                    Qty: {line.quantityOrdered || line.quantity || 0} × {formatCurrency(line.unitPrice || 0, selectedOrder.currencyCode || 'USD')}
-                                  </div>
-                                </div>
-                                <div className="text-sm font-medium">
-                                  {formatCurrency(line.extendedPrice || line.totalPrice || 0, selectedOrder.currencyCode || 'USD')}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-gray-500 text-sm">No products in this order</p>
-                        );
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Notes Section */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Order Notes (Optional)
-                    </label>
-                    <textarea
-                      value={modifyRequest.notes}
-                      onChange={(e) => updateModifyRequest('notes', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Add any notes for this order modification"
-                      rows={3}
-                      maxLength={132}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum 132 characters
-                    </p>
-                  </div>
-
-                  {/* Add Products Section */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-medium text-gray-900">Add Products to Order</h4>
-                      <Button 
-                        size="sm" 
-                        onClick={() => setShowProductSearch(true)}
-                        variant="primary"
-                      >
-                        <Search className="w-4 h-4 mr-2" />
-                        Search Products
-                      </Button>
-                    </div>
-
-                    {/* Product Search Modal */}
-                    {showProductSearch && (
-                      <div className="fixed inset-0 z-60 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                          <div className="p-4 border-b">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-medium">Search Products</h3>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setShowProductSearch(false);
-                                  setProductSearchQuery('');
-                                  setSearchResults([]);
-                                }}
-                              >
-                                ×
-                              </Button>
-                            </div>
-                            <form onSubmit={handleProductSearch} className="mt-4">
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={productSearchQuery}
-                                  onChange={(e) => setProductSearchQuery(e.target.value)}
-                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Search for products..."
-                                />
-                                <Button type="submit" disabled={searchLoading}>
-                                  {searchLoading ? (
-                                    <LoadingSpinner size="sm" />
-                                  ) : (
-                                    <Search className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </form>
-                          </div>
-                          <div className="max-h-96 overflow-y-auto">
-                            {searchResults.length > 0 ? (
-                              <div className="p-4 space-y-2">
-                                {searchResults.map((product) => (
-                                  <div
-                                    key={product.ingramPartNumber}
-                                    className="flex items-center justify-between p-3 border rounded hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => selectProduct(product)}
-                                  >
-                                    <div className="flex-1">
-                                      <div className="font-medium text-sm">{product.description}</div>
-                                      <div className="text-xs text-gray-500">Part: {product.ingramPartNumber}</div>
-                                      <div className="text-xs text-gray-500">Brand: {product.vendorName}</div>
-                                    </div>
-                                    <Button size="sm" variant="ghost">
-                                      <Plus className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : productSearchQuery && !searchLoading ? (
-                              <div className="p-4 text-center text-gray-500">
-                                No products found
-                              </div>
-                            ) : (
-                              <div className="p-4 text-center text-gray-500">
-                                Enter a search term to find products
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Selected Products for Modification */}
-                    {modifyRequest.lines.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <h5 className="text-sm font-medium text-gray-700">Products to Add:</h5>
-                        {modifyRequest.lines.map((line, index) => (
-                          <div key={index} className="flex items-center justify-between bg-blue-50 p-3 rounded border">
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">Part: {line.ingramPartNumber}</div>
-                              <div className="text-xs text-gray-500">Line: {line.customerLineNumber}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => updateLineQuantity(index, Math.max(1, (line.quantity || 1) - 1))}
-                                >
-                                  -
-                                </Button>
-                                <span className="w-8 text-center text-sm">{line.quantity || 1}</span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => updateLineQuantity(index, (line.quantity || 1) + 1)}
-                                >
-                                  +
-                                </Button>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => removeLine(index)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
+                {/* Cancel Order Button */}
+                {selectedOrder.orderStatus !== 'Cancelled' && selectedOrder.orderStatus !== 'Shipped' && selectedOrder.orderStatus !== 'Delivered' && (
+                  <div className="flex justify-end pt-4 border-t border-gray-200">
                     <Button
                       variant="ghost"
-                      onClick={() => setShowModifyForm(false)}
+                      onClick={() => handleCancelOrder(selectedOrder.ingramOrderNumber)}
+                      className="text-red-600 hover:text-red-800"
                     >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleModifyOrder}
-                      disabled={modifyRequest.lines.length === 0 || loading}
-                    >
-                      {loading ? (
-                        <>
-                          <LoadingSpinner size="sm" className="mr-2" />
-                          Modifying...
-                        </>
-                      ) : (
-                        'Modify Order'
-                      )}
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Cancel Order
                     </Button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

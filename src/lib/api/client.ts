@@ -33,6 +33,7 @@ export class ApiClient {
     const responseText = await response.text();
     console.log('API Client - Response status:', response.status);
     console.log('API Client - Response text:', responseText.substring(0, 200) + '...');
+    console.log('API Client - Full response text:', responseText);
 
     if (!response.ok) {
       let errorData;
@@ -60,7 +61,18 @@ export class ApiClient {
       );
     }
 
-    return JSON.parse(responseText);
+    // Handle empty response (common for DELETE operations)
+    if (!responseText || responseText.trim() === '') {
+      return null as T;
+    }
+
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      // If response is not JSON, return the raw text
+      console.log('API Client - Non-JSON response, returning raw text');
+      return responseText as T;
+    }
   }
 
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {

@@ -33,12 +33,37 @@ export class OrdersApi {
 
   async cancelOrder(orderNumber: string): Promise<void> {
     const endpoint = `/resellers/v6/orders/${orderNumber}`;
-    return apiClient.delete(endpoint);
+    console.log('OrdersApi - Cancelling order:', {
+      orderNumber,
+      endpoint
+    });
+    
+    try {
+      const result = await apiClient.delete(endpoint);
+      console.log('OrdersApi - Order cancellation successful:', result);
+      return result;
+    } catch (error) {
+      console.error('OrdersApi - Order cancellation failed:', error);
+      throw error;
+    }
   }
 
   async modifyOrder(orderNumber: string, modifications: any): Promise<Order> {
     const endpoint = `/resellers/v6/orders/${orderNumber}`;
-    return apiClient.put<Order>(endpoint, modifications);
+    console.log('OrdersApi - Modifying order:', {
+      orderNumber,
+      endpoint,
+      modifications: JSON.stringify(modifications, null, 2)
+    });
+    
+    try {
+      const result = await apiClient.put<Order>(endpoint, modifications);
+      console.log('OrdersApi - Order modification successful:', result);
+      return result;
+    } catch (error) {
+      console.error('OrdersApi - Order modification failed:', error);
+      throw error;
+    }
   }
 }
 
