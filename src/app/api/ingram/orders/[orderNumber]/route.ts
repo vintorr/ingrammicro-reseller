@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderNumber: string } }
+  { params }: { params: Promise<{ orderNumber: string }> }
 ) {
   try {
-    const { orderNumber } = params;
+    const { orderNumber } = await params;
     const orderDetails = await ordersApi.getOrderDetails(orderNumber);
     return NextResponse.json(orderDetails);
   } catch (error) {
@@ -23,10 +23,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderNumber: string } }
+  { params }: { params: Promise<{ orderNumber: string }> }
 ) {
   try {
-    const { orderNumber } = params;
+    const { orderNumber } = await params;
     const modifications = await request.json();
     const updatedOrder = await ordersApi.modifyOrder(orderNumber, modifications);
     return NextResponse.json(updatedOrder);
@@ -44,10 +44,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { orderNumber: string } }
+  { params }: { params: Promise<{ orderNumber: string }> }
 ) {
   try {
-    const { orderNumber } = params;
+    const { orderNumber } = await params;
     const result = await ordersApi.cancelOrder(orderNumber);
 
     // For DELETE operations, null/undefined result typically means success

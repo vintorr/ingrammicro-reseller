@@ -230,21 +230,11 @@ interface CartItemProps {
 
 function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   const { product, quantity, totalPrice } = item;
-  const primaryImage = product.images?.find(img => img.primary) || product.images?.[0];
-
   return (
     <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
-      {/* Product Image */}
+      {/* Product Image Placeholder */}
       <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
-        {primaryImage?.url ? (
-          <img
-            src={primaryImage.url}
-            alt={product.description}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span className="text-gray-400 text-xs">No Image</span>
-        )}
+        <span className="text-gray-400 text-xs">No Image</span>
       </div>
 
       {/* Product Details */}

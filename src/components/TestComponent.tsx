@@ -26,7 +26,7 @@ export default function TestComponent() {
         setMessage(`Step 3: API working! Found ${data.catalog?.length || 0} products`);
         setStep(3);
       } catch (error) {
-        setMessage(`Step 3: API error: ${error.message}`);
+        setMessage(`Step 3: API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setStep(3);
       }
     };
