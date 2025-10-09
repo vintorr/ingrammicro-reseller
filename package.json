@@ -19,7 +19,7 @@
     "lucide-react": "^0.460.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.0.0",
-    "framer-motion": "^10.16.5",
+    "framer-motion": "^12.0.0",
     "next-themes": "^0.2.1",
     "uuid": "^9.0.1",
     "xi_sdk_resellers": "^1.2.0"
