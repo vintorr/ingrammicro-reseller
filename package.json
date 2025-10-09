@@ -22,14 +22,14 @@
     "framer-motion": "^12.0.0",
     "next-themes": "^0.2.1",
     "uuid": "^9.0.1",
-    "xi_sdk_resellers": "^1.2.0"
+    "xi_sdk_resellers": "^1.2.0",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
-    "tailwindcss": "^4",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
