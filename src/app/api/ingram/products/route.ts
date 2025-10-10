@@ -26,26 +26,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Product search error:', error);
-    
-    // Enhanced error logging for debugging
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    
-    // Check for specific error types
-    if (error && typeof error === 'object' && 'status' in error) {
-      console.error('API Error status:', (error as any).status);
-      console.error('API Error data:', (error as any).data);
-    }
-    
     return NextResponse.json(
       { 
         error: 'Failed to fetch products',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        type: error instanceof Error ? error.name : 'Unknown',
-        timestamp: new Date().toISOString()
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
