@@ -98,13 +98,10 @@ class IngramAuthService {
   }
 
   private getOAuthEndpoint(): string {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const baseUrl = isProduction 
-      ? process.env.INGRAM_API_BASE_URL! 
-      : process.env.INGRAM_SANDBOX_URL!;
-    
-    // OAuth endpoint is always at the root of the base URL
-    return `${baseUrl}/oauth/oauth20/token`;
+    // OAuth endpoint should always use the production URL, even in development
+    // The sandbox is only for API calls, not for authentication
+    // But make it configurable via environment variable
+    return process.env.INGRAM_OAUTH_URL || 'https://api.ingrammicro.com:443/oauth/oauth20/token';
   }
 }
 

@@ -7,12 +7,12 @@ export async function GET() {
     const token = await ingramAuth.getAccessToken();
     const headers = await ingramAuth.getAuthHeaders();
     
-    // Get OAuth endpoint info (we'll need to access it via reflection or add a getter)
+    // Get OAuth endpoint info
     const isProduction = process.env.NODE_ENV === 'production';
     const baseUrl = isProduction 
       ? process.env.INGRAM_API_BASE_URL! 
       : process.env.INGRAM_SANDBOX_URL!;
-    const oauthEndpoint = `${baseUrl}/oauth/oauth20/token`;
+    const oauthEndpoint = process.env.INGRAM_OAUTH_URL || 'https://api.ingrammicro.com:443/oauth/oauth20/token';
     
     return NextResponse.json({
       status: 'success',

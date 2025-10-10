@@ -16,11 +16,13 @@ export async function GET() {
       hasSenderId: !!process.env.INGRAM_SENDER_ID,
       hasApiBaseUrl: !!process.env.INGRAM_API_BASE_URL,
       hasSandboxUrl: !!process.env.INGRAM_SANDBOX_URL,
+      hasOauthUrl: !!process.env.INGRAM_OAUTH_URL,
       // Show non-sensitive values
       countryCode: process.env.INGRAM_COUNTRY_CODE,
       senderId: process.env.INGRAM_SENDER_ID,
       apiBaseUrl: process.env.INGRAM_API_BASE_URL,
       sandboxUrl: process.env.INGRAM_SANDBOX_URL,
+      oauthUrl: process.env.INGRAM_OAUTH_URL,
     };
 
     return NextResponse.json({
