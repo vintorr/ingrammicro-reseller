@@ -27,9 +27,7 @@ class IngramAuthService {
       return this.token;
     }
 
-    // Use configurable OAuth endpoint
-    const oauthEndpoint = this.getOAuthEndpoint();
-    const response = await fetch(oauthEndpoint, {
+    const response = await fetch('https://api.ingrammicro.com:443/oauth/oauth20/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -95,16 +93,6 @@ class IngramAuthService {
     return isProduction 
       ? process.env.INGRAM_API_BASE_URL! 
       : process.env.INGRAM_SANDBOX_URL!;
-  }
-
-  private getOAuthEndpoint(): string {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const baseUrl = isProduction 
-      ? process.env.INGRAM_API_BASE_URL! 
-      : process.env.INGRAM_SANDBOX_URL!;
-    
-    // OAuth endpoint is always at the root of the base URL
-    return `${baseUrl}/oauth/oauth20/token`;
   }
 }
 
