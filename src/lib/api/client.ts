@@ -31,12 +31,25 @@ export class ApiClient {
     const responseText = await response.text();
 
     if (!response.ok) {
+      // Enhanced logging for production debugging
+      console.error('API Request Failed:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        responseText: responseText,
+        environment: process.env.NODE_ENV,
+        baseURL: this.baseURL,
+        endpoint,
+        headers: Object.keys(headers)
+      });
+      
       let errorData;
       try {
         errorData = JSON.parse(responseText);
         // Handle Ingram Micro API error format
         if (Array.isArray(errorData) && errorData.length > 0) {
           const firstError = errorData[0];
+          console.error('Ingram API Error Array:', firstError);
           throw new ApiError(
             response.status,
             firstError.message || 'API request failed',
@@ -48,6 +61,7 @@ export class ApiClient {
           throw e;
         }
         errorData = { raw: responseText };
+        console.error('Failed to parse error response:', responseText);
       }
       throw new ApiError(
         response.status,
