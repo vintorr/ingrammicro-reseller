@@ -28,9 +28,9 @@ export function ProductCard({
   priceLoading = false
 }: ProductCardProps) {
   // Get price/availability data for this specific product
-  const productPriceAvailability = priceAvailabilityData?.find(
-    (item: any) => item.ingramPartNumber === product.ingramPartNumber
-  );
+  const productPriceAvailability = Array.isArray(priceAvailabilityData) 
+    ? priceAvailabilityData.find((item: any) => item.ingramPartNumber === product.ingramPartNumber)
+    : null;
   
   return (
     <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
@@ -98,7 +98,7 @@ export function ProductCard({
               <LoadingSpinner size="sm" />
               <span className="text-sm text-gray-500">Loading price...</span>
             </div>
-                        ) : productPriceAvailability?.pricing ? (
+                        ) : productPriceAvailability?.pricing && Object.keys(productPriceAvailability.pricing).length > 0 ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="text-lg font-semibold text-green-600">

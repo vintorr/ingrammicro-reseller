@@ -22,7 +22,7 @@ const ProductSearch = () => {
   });
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [priceAvailabilityData, setPriceAvailabilityData] = useState<PriceAvailabilityResponse | null>(null);
+  const [priceAvailabilityData, setPriceAvailabilityData] = useState<any[] | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
   
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
@@ -53,7 +53,7 @@ const ProductSearch = () => {
       }
       
       const data = await response.json();
-      setPriceAvailabilityData(data);
+      setPriceAvailabilityData(data.products || []);
     } catch (err) {
       console.error('Error fetching batch price and availability:', err);
     } finally {
@@ -75,7 +75,7 @@ const ProductSearch = () => {
 
   // Helper function to get price/availability data for a specific product
   const getProductPriceAvailability = (ingramPartNumber: string) => {
-    if (!priceAvailabilityData) return null;
+    if (!Array.isArray(priceAvailabilityData)) return null;
     return priceAvailabilityData.find(item => item.ingramPartNumber === ingramPartNumber) || null;
   };
 

@@ -23,9 +23,9 @@ export function ProductListRow({
   priceLoading = false
 }: ProductListRowProps) {
   // Get price/availability data for this specific product
-  const productPriceAvailability = priceAvailabilityData?.find(
-    (item: any) => item.ingramPartNumber === product.ingramPartNumber
-  );
+  const productPriceAvailability = Array.isArray(priceAvailabilityData) 
+    ? priceAvailabilityData.find((item: any) => item.ingramPartNumber === product.ingramPartNumber)
+    : null;
 
   return (
     <tr key={product.ingramPartNumber} className="hover:bg-gray-50">
@@ -45,7 +45,7 @@ export function ProductListRow({
             <LoadingSpinner size="sm" />
             <span className="text-sm text-gray-500">Loading...</span>
           </div>
-        ) : productPriceAvailability?.pricing ? (
+        ) : productPriceAvailability?.pricing && Object.keys(productPriceAvailability.pricing).length > 0 ? (
           <div className="space-y-1">
             <div className="text-sm font-medium text-green-600">
               ${productPriceAvailability.pricing.customerPrice} {productPriceAvailability.pricing.currencyCode}

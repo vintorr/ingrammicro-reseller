@@ -131,6 +131,13 @@ const PriceAvailability: React.FC<PriceAvailabilityProps> = () => {
               <Package className="w-5 h-5 mr-2" />
               Price & Availability Results ({priceResults.length})
             </h3>
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-800">
+                  <strong>Sandbox Mode:</strong> Products with missing pricing or availability data in the sandbox are automatically enhanced with mock data for testing purposes. Real data will be used in production.
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="overflow-x-auto">
@@ -161,32 +168,36 @@ const PriceAvailability: React.FC<PriceAvailabilityProps> = () => {
                       {product.ingramPartNumber}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {product.description || 'No description available'}
+                      {product.description || product.productStatusMessage || 'No description available'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.pricing ? (
+                      {product.productStatusCode === 'E' ? (
+                        <span className="text-red-500">Product Not Found</span>
+                      ) : product.pricing && Object.keys(product.pricing).length > 0 ? (
                         <div>
                           <div className="font-medium">
-                            {formatCurrency(product.pricing.customerPrice, product.pricing.currency)}
+                            {formatCurrency(product.pricing.customerPrice, product.pricing.currencyCode)}
                           </div>
-                          {product.pricing.msrp > product.pricing.customerPrice && (
+                          {product.pricing.retailPrice > product.pricing.customerPrice && (
                             <div className="text-xs text-gray-500 line-through">
-                              MSRP: {formatCurrency(product.pricing.msrp, product.pricing.currency)}
+                              Retail: {formatCurrency(product.pricing.retailPrice, product.pricing.currencyCode)}
                             </div>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-400">N/A</span>
+                        <span className="text-gray-400">Price not available</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {product.availability ? (
+                      {product.productStatusCode === 'E' ? (
+                        <Badge variant="error">Not Found</Badge>
+                      ) : product.availability ? (
                         <div className="flex items-center">
                           {product.availability.available ? (
                             <>
                               <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
                               <Badge variant="success">
-                                In Stock ({product.availability.quantity})
+                                In Stock ({product.availability.totalAvailability})
                               </Badge>
                             </>
                           ) : (
@@ -201,13 +212,15 @@ const PriceAvailability: React.FC<PriceAvailabilityProps> = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.availability?.warehouse?.length > 0 ? (
+                      {product.productStatusCode === 'E' ? (
+                        <span className="text-gray-400">N/A</span>
+                      ) : product.availability?.availabilityByWarehouse?.length > 0 ? (
                         <div className="flex items-center">
                           <MapPin className="w-4 h-4 mr-1" />
                           <div>
-                            {product.availability.warehouse.map((wh: any, idx: number) => (
+                            {product.availability.availabilityByWarehouse.map((wh: any, idx: number) => (
                               <div key={idx} className="text-xs">
-                                {wh.location} ({wh.quantity})
+                                {wh.location} ({wh.quantityAvailable})
                               </div>
                             ))}
                           </div>

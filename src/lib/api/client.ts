@@ -7,9 +7,16 @@ export class ApiClient {
 
   constructor() {
     this.isProduction = process.env.NODE_ENV === 'production';
-    this.baseURL = this.isProduction 
+    let baseURL = this.isProduction 
       ? process.env.INGRAM_API_BASE_URL! 
       : process.env.INGRAM_SANDBOX_URL!;
+    
+    // Fix double /sandbox issue if it exists
+    if (baseURL && baseURL.includes('/sandbox/sandbox')) {
+      baseURL = baseURL.replace('/sandbox/sandbox', '/sandbox');
+    }
+    
+    this.baseURL = baseURL;
   }
 
   private async makeRequest<T>(
