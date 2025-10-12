@@ -87,20 +87,20 @@ export default function AdminDashboard() {
   };
 
   const StatCard = ({ title, value, change, icon: Icon, isCurrency = false }: any) => (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center">
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
             <Icon className="w-5 h-5 text-blue-600" />
           </div>
         </div>
         <div className="ml-4 flex-1">
           <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900">
             {isCurrency ? formatCurrency(value) : formatNumber(value)}
           </p>
         </div>
-        <div className={`flex items-center text-sm ${
+        <div className={`flex items-center text-sm font-medium ${
           change >= 0 ? 'text-green-600' : 'text-red-600'
         }`}>
           {change >= 0 ? (
@@ -119,12 +119,16 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening with your business.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here&apos;s what&apos;s happening with your business.</p>
         </div>
         <div className="flex space-x-3">
-          <Button variant="secondary">Export Report</Button>
-          <Button>Generate Quote</Button>
+          <Button variant="secondary" className="px-4 py-2">
+            Export Report
+          </Button>
+          <Button className="px-4 py-2">
+            Generate Quote
+          </Button>
         </div>
       </div>
 
@@ -159,9 +163,9 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
           </div>
           <div className="overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
@@ -183,7 +187,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentOrders.map((order: any) => (
-                  <tr key={order.id}>
+                  <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {order.id}
                     </td>
@@ -204,16 +208,16 @@ export default function AdminDashboard() {
             </table>
           </div>
           <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <Button variant="ghost" size="sm" className="w-full">
+            <Button variant="ghost" size="sm" className="w-full text-gray-600 hover:text-gray-800">
               View All Orders
             </Button>
           </div>
         </div>
 
         {/* Top Products */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Top Products</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Top Products</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -221,7 +225,7 @@ export default function AdminDashboard() {
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+                      <span className="text-sm font-semibold text-blue-600">#{index + 1}</span>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{product.name}</p>
@@ -237,7 +241,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-            <Button variant="ghost" size="sm" className="w-full">
+            <Button variant="ghost" size="sm" className="w-full text-gray-600 hover:text-gray-800">
               View All Products
             </Button>
           </div>
@@ -245,18 +249,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center">
+          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center hover:bg-gray-100">
             <Package className="w-6 h-6 mb-2" />
             <span>Add Product</span>
           </Button>
-          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center">
+          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center hover:bg-gray-100">
             <FileText className="w-6 h-6 mb-2" />
             <span>Create Quote</span>
           </Button>
-          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center">
+          <Button variant="secondary" className="h-20 flex flex-col items-center justify-center hover:bg-gray-100">
             <TrendingUp className="w-6 h-6 mb-2" />
             <span>View Analytics</span>
           </Button>

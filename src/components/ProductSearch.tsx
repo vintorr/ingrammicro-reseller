@@ -88,9 +88,15 @@ const ProductSearch = () => {
     }
   }, [products]);
 
-  // Search products when filters change
+  // Auto-load products on component mount
   useEffect(() => {
-    if (searchQuery || filters.category || filters.brand) {
+    // Load initial products when component mounts
+    searchProducts({ pageNumber: 1, pageSize: 20 });
+  }, []);
+
+  // Search products when filters change (only if there's a search query or filters)
+  useEffect(() => {
+    if (searchQuery.trim() || filters.category || filters.brand) {
       searchProducts({ ...filters, keyword: searchQuery });
     }
   }, [searchQuery, filters.pageNumber, filters.pageSize, searchProducts]);
@@ -172,12 +178,31 @@ const ProductSearch = () => {
 
   const getUniqueCategories = () => {
     const categories = products.map(p => p.productCategory || p.category).filter(Boolean);
-    return [...new Set(categories)];
+    return [...new Set(categories)].sort();
   };
 
   const getUniqueBrands = () => {
     const brands = products.map(p => p.vendorName).filter(Boolean);
-    return [...new Set(brands)];
+    return [...new Set(brands)].sort();
+  };
+
+  // Filter products by price range (client-side filtering)
+  const getFilteredProducts = () => {
+    let filtered = products;
+
+    // Apply price range filter
+    if (priceRange.min > 0 || priceRange.max < 10000) {
+      filtered = filtered.filter(product => {
+        const productPrice = getProductPriceAvailability(product.ingramPartNumber);
+        if (productPrice?.pricing?.customerPrice) {
+          const price = productPrice.pricing.customerPrice;
+          return price >= priceRange.min && price <= priceRange.max;
+        }
+        return true; // Include products without price data
+      });
+    }
+
+    return filtered;
   };
 
   return (
@@ -247,9 +272,9 @@ const ProductSearch = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Enhanced Sidebar Filters */}
-          <div className="w-80 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Enhanced Sidebar Filters - Desktop Only */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
@@ -257,7 +282,7 @@ const ProductSearch = () => {
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 hover:text-blue-700 text-sm"
                 >
                   Clear All
                 </Button>
@@ -265,71 +290,134 @@ const ProductSearch = () => {
 
               {/* Category Filter */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Category
+                  {selectedCategory && (
+                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                      {selectedCategory}
+                    </span>
+                  )}
+                </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => {
                     setSelectedCategory(e.target.value);
                     setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="">All Categories</option>
-                  {getUniqueCategories().map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
+                  {products.length > 0 ? (
+                    getUniqueCategories().map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Loading categories...</option>
+                  )}
                 </select>
               </div>
 
               {/* Brand Filter */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Brand</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Brand
+                  {selectedBrand && (
+                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                      {selectedBrand}
+                    </span>
+                  )}
+                </label>
                 <select
                   value={selectedBrand}
                   onChange={(e) => {
                     setSelectedBrand(e.target.value);
                     setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="">All Brands</option>
-                  {getUniqueBrands().map(brand => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
+                  {products.length > 0 ? (
+                    getUniqueBrands().map(brand => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Loading brands...</option>
+                  )}
                 </select>
               </div>
 
               {/* Price Range Filter */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Price Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Price Range
+                  {(priceRange.min > 0 || priceRange.max < 10000) && (
+                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                      ${priceRange.min} - ${priceRange.max}
+                    </span>
+                  )}
+                </label>
                 <div className="space-y-3">
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={priceRange.min || ''}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={priceRange.max || ''}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000 }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Min Price</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        value={priceRange.min || ''}
+                        onChange={(e) => {
+                          const min = Number(e.target.value) || 0;
+                          setPriceRange(prev => ({ ...prev, min }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Max Price</label>
+                      <input
+                        type="number"
+                        placeholder="10000"
+                        min="0"
+                        value={priceRange.max || ''}
+                        onChange={(e) => {
+                          const max = Number(e.target.value) || 10000;
+                          setPriceRange(prev => ({ ...prev, max }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
                   </div>
+                  {(priceRange.min > 0 || priceRange.max < 10000) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPriceRange({min: 0, max: 10000});
+                      }}
+                      className="w-full text-xs text-gray-600 hover:text-gray-800"
+                    >
+                      Reset Price Range
+                    </Button>
+                  )}
                 </div>
               </div>
 
               {/* Sort Options */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Sort By</label>
-                <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Sort By
+                  <span className="ml-2 text-xs text-gray-500">
+                    {sortBy} ({sortOrder})
+                  </span>
+                </label>
+                <div className="space-y-3">
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'popularity')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setSortBy(e.target.value as 'name' | 'price' | 'popularity');
+                      setFilters(prev => ({ ...prev, sortBy: e.target.value as 'name' | 'price' | 'popularity', pageNumber: 1 }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   >
                     <option value="name">Name</option>
                     <option value="price">Price</option>
@@ -339,20 +427,26 @@ const ProductSearch = () => {
                     <Button
                       variant={sortOrder === 'asc' ? 'primary' : 'ghost'}
                       size="sm"
-                      onClick={() => setSortOrder('asc')}
-                      className="flex-1"
+                      onClick={() => {
+                        setSortOrder('asc');
+                        setFilters(prev => ({ ...prev, sortOrder: 'asc', pageNumber: 1 }));
+                      }}
+                      className="flex-1 flex items-center justify-center"
                     >
                       <SortAsc className="w-4 h-4 mr-1" />
-                      Asc
+                      Ascending
                     </Button>
                     <Button
                       variant={sortOrder === 'desc' ? 'primary' : 'ghost'}
                       size="sm"
-                      onClick={() => setSortOrder('desc')}
-                      className="flex-1"
+                      onClick={() => {
+                        setSortOrder('desc');
+                        setFilters(prev => ({ ...prev, sortOrder: 'desc', pageNumber: 1 }));
+                      }}
+                      className="flex-1 flex items-center justify-center"
                     >
                       <SortDesc className="w-4 h-4 mr-1" />
-                      Desc
+                      Descending
                     </Button>
                   </div>
                 </div>
@@ -361,12 +455,31 @@ const ProductSearch = () => {
               {/* Quick Stats */}
               {products.length > 0 && (
                 <div className="border-t pt-4">
-                  <div className="text-sm text-gray-600">
-                    <p>Showing {products.length} products</p>
+                  <div className="text-sm text-gray-600 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span>Products found:</span>
+                      <span className="font-semibold text-gray-900">
+                        {getFilteredProducts().length}
+                        {getFilteredProducts().length !== products.length && (
+                          <span className="text-blue-600"> / {products.length}</span>
+                        )}
+                      </span>
+                    </div>
                     {compareList.size > 0 && (
-                      <p className="mt-1 text-blue-600">
-                        {compareList.size} selected for comparison
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <span>For comparison:</span>
+                        <span className="font-semibold text-blue-600">
+                          {compareList.size}
+                        </span>
+                      </div>
+                    )}
+                    {favorites.size > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span>Favorites:</span>
+                        <span className="font-semibold text-red-600">
+                          {favorites.size}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -376,6 +489,95 @@ const ProductSearch = () => {
 
           {/* Main Content Area */}
           <div className="flex-1">
+            {/* Mobile Filter Toggle */}
+            <div className="lg:hidden mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+            </div>
+
+            {/* Mobile Filters */}
+            {showFilters && (
+              <div className="lg:hidden mb-6">
+                <div className="bg-white rounded-lg shadow-sm border p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="text-blue-600 hover:text-blue-700 text-sm"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                  
+                  {/* Mobile Category Filter */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Categories</option>
+                      {products.length > 0 && getUniqueCategories().map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Mobile Brand Filter */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                    <select
+                      value={selectedBrand}
+                      onChange={(e) => {
+                        setSelectedBrand(e.target.value);
+                        setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">All Brands</option>
+                      {products.length > 0 && getUniqueBrands().map(brand => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Mobile Price Range */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={priceRange.min || ''}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={priceRange.max || ''}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000 }))}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Results Header */}
             {products.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border mb-6">
@@ -386,7 +588,10 @@ const ProductSearch = () => {
                         Search Results
                       </h3>
                       <p className="text-sm text-gray-600 mt-1">
-                        {products.length} products found
+                        {getFilteredProducts().length} products found
+                        {getFilteredProducts().length !== products.length && (
+                          <span className="text-blue-600"> (filtered from {products.length})</span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -408,7 +613,7 @@ const ProductSearch = () => {
                 <div className="p-6">
                   {viewMode === 'grid' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {products.map((product) => (
+                      {getFilteredProducts().map((product) => (
                         <ProductCard
                           key={product.ingramPartNumber}
                           product={product}
@@ -425,7 +630,7 @@ const ProductSearch = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {products.map((product) => (
+                      {getFilteredProducts().map((product) => (
                         <ProductListRow
                           key={product.ingramPartNumber}
                           product={product}
@@ -517,22 +722,25 @@ const ProductSearch = () => {
             )}
 
             {/* No Results */}
-            {!loading && !error && products.length === 0 && searchQuery && (
+            {!loading && !error && getFilteredProducts().length === 0 && (searchQuery || priceRange.min > 0 || priceRange.max < 10000) && (
               <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
                 <p className="text-gray-500">No products found matching your search criteria.</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
               </div>
             )}
 
             {/* Initial State */}
             {!loading && !error && products.length === 0 && !searchQuery && (
               <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-                <p className="text-gray-500 mb-4">Enter a search term to find products.</p>
-                <Button 
-                  onClick={() => searchProducts({ pageNumber: 1, pageSize: 20 })}
-                  variant="primary"
-                >
-                  Load Initial Products
-                </Button>
+                <p className="text-gray-500 mb-4">Loading products...</p>
+                <LoadingSpinner size="lg" />
               </div>
             )}
           </div>
