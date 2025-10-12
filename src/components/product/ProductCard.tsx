@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Heart, Eye, ShoppingCart, Star } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 import type { Product, PriceAvailabilityResponse } from '@/lib/types';
 
@@ -17,6 +18,10 @@ interface ProductCardProps {
   showQuickView?: boolean;
   priceAvailabilityData?: any;
   priceLoading?: boolean;
+  isFavorite?: boolean;
+  isInCompare?: boolean;
+  onToggleFavorite?: () => void;
+  onToggleCompare?: () => void;
 }
 
 export function ProductCard({ 
@@ -25,45 +30,91 @@ export function ProductCard({
   onViewDetails,
   showQuickView = true,
   priceAvailabilityData,
-  priceLoading = false
+  priceLoading = false,
+  isFavorite = false,
+  isInCompare = false,
+  onToggleFavorite,
+  onToggleCompare
 }: ProductCardProps) {
+  const router = useRouter();
+  
   // Get price/availability data for this specific product
   const productPriceAvailability = Array.isArray(priceAvailabilityData) 
     ? priceAvailabilityData.find((item: any) => item.ingramPartNumber === product.ingramPartNumber)
     : null;
+
+  const handleViewDetails = () => {
+    router.push(`/products/${product.ingramPartNumber}`);
+  };
   
   return (
-    <div className="group relative bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+    <div className="group relative bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Product Image */}
       <div 
-        className="aspect-square w-full overflow-hidden rounded-t-lg bg-gray-50 cursor-pointer"
-        onClick={() => onViewDetails?.(product)}
+        className="aspect-square w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 cursor-pointer relative"
+        onClick={handleViewDetails}
       >
-        <div className="h-full w-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-          <span className="text-gray-400 text-sm">No Image</span>
+        <div className="h-full w-full flex items-center justify-center hover:scale-105 transition-transform duration-300">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-2 bg-gray-200 rounded-lg flex items-center justify-center">
+              <span className="text-gray-400 text-xs">📦</span>
+            </div>
+            <span className="text-gray-400 text-xs">Product Image</span>
+          </div>
         </div>
         
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.newProduct === 'True' && (
-            <Badge variant="success">New</Badge>
+            <Badge variant="success" className="text-xs">New</Badge>
           )}
           {product.directShip === 'True' && (
-            <Badge variant="info">Direct Ship</Badge>
+            <Badge variant="info" className="text-xs">Direct Ship</Badge>
           )}
           {product.discontinued === 'True' && (
-            <Badge variant="warning">Discontinued</Badge>
+            <Badge variant="warning" className="text-xs">Discontinued</Badge>
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Action Buttons */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite?.();
+            }}
+            className={`w-8 h-8 p-0 rounded-full ${isFavorite ? 'bg-red-100 text-red-600' : 'bg-white/80 text-gray-600 hover:bg-white'}`}
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCompare?.();
+            }}
+            className={`w-8 h-8 p-0 rounded-full ${isInCompare ? 'bg-blue-100 text-blue-600' : 'bg-white/80 text-gray-600 hover:bg-white'}`}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Quick View Overlay */}
         {showQuickView && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 flex items-center justify-center">
             <Button
-              variant="ghost"
+              variant="primary"
               size="sm"
-              onClick={() => {/* Open quick view modal */}}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails();
+              }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             >
+              <Eye className="w-4 h-4 mr-2" />
               Quick View
             </Button>
           </div>
@@ -71,80 +122,84 @@ export function ProductCard({
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-                <h3 
-                  className="text-sm font-medium text-gray-900 line-clamp-2 cursor-pointer hover:text-blue-600"
-                  onClick={() => onViewDetails?.(product)}
-                >
-                  {product.description}
-                </h3>
+      <div className="p-5">
+        <div className="space-y-3">
+          <div>
+            <h3 
+              className="text-sm font-semibold text-gray-900 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={handleViewDetails}
+            >
+              {product.description}
+            </h3>
             
-            <p className="mt-1 text-xs text-gray-500">
-              SKU: {product.ingramPartNumber}
-            </p>
-            
-            <p className="text-xs text-gray-500">
-              Brand: {product.vendorName}
-            </p>
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div className="mt-3">
-          {priceLoading ? (
-            <div className="flex items-center gap-2">
-              <LoadingSpinner size="sm" />
-              <span className="text-sm text-gray-500">Loading price...</span>
-            </div>
-                        ) : productPriceAvailability?.pricing && Object.keys(productPriceAvailability.pricing).length > 0 ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-semibold text-green-600">
-                                ${productPriceAvailability.pricing.customerPrice} {productPriceAvailability.pricing.currencyCode}
-                              </span>
-                            </div>
-                            {productPriceAvailability.pricing.retailPrice > productPriceAvailability.pricing.customerPrice && (
-                              <div className="text-sm text-gray-500 line-through">
-                                MSRP: ${productPriceAvailability.pricing.retailPrice} {productPriceAvailability.pricing.currencyCode}
-                              </div>
-                            )}
-                          </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
-                Price available on request
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {product.ingramPartNumber}
+              </span>
+              <span className="text-xs text-gray-500">
+                {product.vendorName}
               </span>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Availability */}
-        <div className="mt-2">
-          {priceLoading ? (
-            <p className="text-sm text-gray-500">Checking availability...</p>
-                        ) : productPriceAvailability?.availability ? (
-                          <div className="flex items-center gap-2">
-                            {productPriceAvailability.availability.available ? (
-                              <>
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                <span className="text-sm text-green-600 font-medium">
-                                  In Stock ({productPriceAvailability.availability.totalAvailability})
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <AlertCircle className="h-4 w-4 text-red-500" />
-                                <span className="text-sm text-red-600 font-medium">Out of Stock</span>
-                              </>
-                            )}
-                          </div>
-          ) : (
-            <p className="text-sm text-gray-600">
-              Check availability for pricing
-            </p>
-          )}
+          {/* Pricing */}
+          <div>
+            {priceLoading ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm text-gray-500">Loading price...</span>
+              </div>
+            ) : productPriceAvailability?.pricing && Object.keys(productPriceAvailability.pricing).length > 0 ? (
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-green-600">
+                    ${productPriceAvailability.pricing.customerPrice}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {productPriceAvailability.pricing.currencyCode}
+                  </span>
+                </div>
+                {productPriceAvailability.pricing.retailPrice > productPriceAvailability.pricing.customerPrice && (
+                  <div className="text-sm text-gray-500 line-through">
+                    MSRP: ${productPriceAvailability.pricing.retailPrice}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                  Price on request
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Availability */}
+          <div>
+            {priceLoading ? (
+              <p className="text-sm text-gray-500">Checking availability...</p>
+            ) : productPriceAvailability?.availability ? (
+              <div className="flex items-center gap-2">
+                {productPriceAvailability.availability.available ? (
+                  <>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">
+                      In Stock ({productPriceAvailability.availability.totalAvailability})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-red-600 font-medium">Out of Stock</span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Check availability for pricing
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Add to Cart */}
@@ -156,8 +211,9 @@ export function ProductCard({
               product.authorizedToPurchase === 'False' ||
               (productPriceAvailability?.availability && !productPriceAvailability.availability.available)
             }
-            className="w-full"
+            className="w-full flex items-center justify-center gap-2 py-2.5"
           >
+            <ShoppingCart className="w-4 h-4" />
             {priceLoading ? 'Loading...' : 
              product.discontinued === 'True'
               ? 'Discontinued' 

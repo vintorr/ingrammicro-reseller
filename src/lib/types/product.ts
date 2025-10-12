@@ -90,6 +90,7 @@ export interface ProductSearchResponse {
   recordsFound: number;
   pageSize: number;
   pageNumber: number;
+  totalPages?: number;
   nextPage?: string;
 }
 

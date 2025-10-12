@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Ingram Micro Reseller Portal",
-  description: "Modern reseller portal built with Next.js, TypeScript, and Ingram Micro APIs",
+  title: "TechStore - Technology Solutions",
+  description: "Your trusted partner for technology solutions. Browse our comprehensive range of products and get expert support.",
 };
 
 interface RootLayoutProps {
