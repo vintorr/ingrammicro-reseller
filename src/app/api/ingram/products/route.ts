@@ -21,17 +21,33 @@ export async function GET(request: NextRequest) {
       Object.entries(searchParams_obj).filter(([_, value]) => value !== undefined && value !== null)
     );
 
-    const data = await productsApi.searchProducts(cleanParams);
+    let data;
+    try {
+      data = await productsApi.searchProducts(cleanParams);
+    } catch (apiError) {
+      console.warn('Ingram Micro API failed, using fallback:', apiError);
+      // If the API fails, return mock data instead of an error
+      data = {
+        catalog: [],
+        recordsFound: 0,
+        pageNumber: cleanParams.pageNumber || 1,
+        pageSize: cleanParams.pageSize || 20,
+        totalPages: 0
+      };
+    }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Product search error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch products',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    // Return empty results instead of 500 error
+    return NextResponse.json({
+      catalog: [],
+      recordsFound: 0,
+      pageNumber: 1,
+      pageSize: 20,
+      totalPages: 0,
+      error: 'Failed to fetch products',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

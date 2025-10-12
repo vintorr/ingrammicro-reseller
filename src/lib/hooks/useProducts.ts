@@ -24,17 +24,28 @@ export function useProducts() {
       
       const response = await fetch(`/api/ingram/products?${queryParams.toString()}`);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // If the API returns an error, try to get the error details
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch {
+          // If we can't parse the error response, use the default message
+        }
+        throw new Error(errorMessage);
       }
       
       const data: ProductSearchResponse = await response.json();
-      setProducts(data.catalog);
-      setTotalPages(Math.ceil(data.recordsFound / data.pageSize));
-      setCurrentPage(data.pageNumber);
+      setProducts(data.catalog || []);
+      setTotalPages(Math.ceil((data.recordsFound || 0) / (data.pageSize || 20)));
+      setCurrentPage(data.pageNumber || 1);
     } catch (err) {
       console.error('useProducts: API error:', err);
       setError(err as Error);
-      setProducts([]);
+      // Don't clear products on error - keep existing products if any
+      // setProducts([]);
     } finally {
       setLoading(false);
     }
