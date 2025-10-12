@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Heart, Share2, ShoppingCart, Star, Truck, Shield, RotateCcw, Package, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -24,14 +24,8 @@ export default function ProductDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  useEffect(() => {
-    if (productId) {
-      fetchProductDetails();
-      fetchPriceAndAvailability();
-    }
-  }, [productId]);
 
-  const fetchProductDetails = async () => {
+  const fetchProductDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -60,9 +54,9 @@ export default function ProductDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
-  const fetchPriceAndAvailability = async () => {
+  const fetchPriceAndAvailability = useCallback(async () => {
     setPriceLoading(true);
     
     try {
@@ -97,7 +91,7 @@ export default function ProductDetailsPage() {
     } finally {
       setPriceLoading(false);
     }
-  };
+  }, [productId]);
 
   // Mock data functions
   const getMockProductDetails = (id: string): Product => {
@@ -155,6 +149,13 @@ export default function ProductDetailsPage() {
     }];
   };
 
+  useEffect(() => {
+    if (productId) {
+      fetchProductDetails();
+      fetchPriceAndAvailability();
+    }
+  }, [productId, fetchProductDetails, fetchPriceAndAvailability]);
+
   const handleAddToCart = () => {
     if (!product || !priceAvailability) return;
     
@@ -188,7 +189,7 @@ export default function ProductDetailsPage() {
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Product Not Found</h2>
-          <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-4">The product you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => router.push('/products')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Products

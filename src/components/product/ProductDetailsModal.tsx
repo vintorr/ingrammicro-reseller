@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Package, DollarSign, Truck, Star, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -42,14 +42,8 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     };
   };
 
-  useEffect(() => {
-    if (isOpen && productId) {
-      fetchProductDetails();
-      fetchPriceAndAvailability();
-    }
-  }, [isOpen, productId]);
 
-  const fetchProductDetails = async () => {
+  const fetchProductDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -110,9 +104,9 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
-  const fetchPriceAndAvailability = async () => {
+  const fetchPriceAndAvailability = useCallback(async () => {
     setPriceLoading(true);
     
     try {
@@ -172,7 +166,7 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     } finally {
       setPriceLoading(false);
     }
-  };
+  }, [productId]);
 
   // Mock price and availability data for fallback
   const getMockPriceAvailability = (id: string) => {
@@ -208,6 +202,13 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
       subscriptionPrice: []
     }];
   };
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      fetchProductDetails();
+      fetchPriceAndAvailability();
+    }
+  }, [isOpen, productId, fetchProductDetails, fetchPriceAndAvailability]);
 
   if (!isOpen) return null;
 
