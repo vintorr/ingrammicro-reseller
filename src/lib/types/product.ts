@@ -1,23 +1,33 @@
+// Updated Product interface to match actual API response
 export interface Product {
   ingramPartNumber: string;
   vendorPartNumber: string;
   description: string;
-  category: string;
-  subCategory: string;
-  productType: string;
-  upcCode: string;
+  productCategory: string;
+  productSubcategory: string;
+  productClass: string | null;
+  upc: string;
   vendorName: string;
-  endUserRequired: string;
-  hasDiscounts: string;
-  type: string;
-  discontinued: string;
-  newProduct: string;
-  directShip: string;
-  hasWarranty: string;
-  replacementSku: string;
-  authorizedToPurchase: string;
-  extraDescription: string;
-  links: Array<{
+  vendorNumber: string;
+  productAuthorized: string;
+  productStatusCode: string | null;
+  lastUpdated?: string;
+  // Legacy fields for backward compatibility
+  category?: string;
+  subCategory?: string;
+  productType?: string;
+  upcCode?: string;
+  endUserRequired?: string;
+  hasDiscounts?: string;
+  type?: string;
+  discontinued?: string;
+  newProduct?: string;
+  directShip?: string;
+  hasWarranty?: string;
+  replacementSku?: string;
+  authorizedToPurchase?: string;
+  extraDescription?: string;
+  links?: Array<{
     topic: string;
     href: string;
     type: string;

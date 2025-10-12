@@ -214,21 +214,24 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                         <p className="text-lg text-gray-600 mb-2">
                           SKU: {product.ingramPartNumber}
                         </p>
-                        <p className="text-lg text-gray-600 mb-4">
+                        <p className="text-lg text-gray-600 mb-2">
                           Brand: {product.vendorName}
+                        </p>
+                        <p className="text-lg text-gray-600 mb-4">
+                          Vendor Part: {product.vendorPartNumber}
                         </p>
                       </div>
                       
                       {/* Badges */}
                       <div className="flex flex-col gap-2">
-                        {product.newProduct === 'True' && (
-                          <Badge variant="success">New Product</Badge>
+                        {(product as any).productAuthorized === 'True' && (
+                          <Badge variant="success">Authorized</Badge>
                         )}
-                        {product.directShip === 'True' && (
-                          <Badge variant="info">Direct Ship</Badge>
+                        {(product as any).productAuthorized === 'False' && (
+                          <Badge variant="warning">Not Authorized</Badge>
                         )}
-                        {product.discontinued === 'True' && (
-                          <Badge variant="warning">Discontinued</Badge>
+                        {(product as any).productStatusCode && (
+                          <Badge variant="info">Status: {(product as any).productStatusCode}</Badge>
                         )}
                       </div>
                     </div>
@@ -246,46 +249,36 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                     <div className="space-y-3">
                       <div>
                         <span className="text-sm font-medium text-gray-500">Category:</span>
-                        <p className="text-gray-900">{product.category || 'N/A'}</p>
+                        <p className="text-gray-900">{(product as any).productCategory || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Subcategory:</span>
-                        <p className="text-gray-900">{product.subCategory || 'N/A'}</p>
+                        <p className="text-gray-900">{(product as any).productSubcategory || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Product Type:</span>
-                        <p className="text-gray-900">{product.productType || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Type:</span>
-                        <p className="text-gray-900">{product.type || 'N/A'}</p>
+                        <span className="text-sm font-medium text-gray-500">Product Class:</span>
+                        <p className="text-gray-900">{(product as any).productClass || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">UPC Code:</span>
-                        <p className="text-gray-900 font-mono text-sm">{product.upcCode || 'N/A'}</p>
+                        <p className="text-gray-900 font-mono text-sm">{(product as any).upc || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Vendor Part Number:</span>
                         <p className="text-gray-900 font-mono text-sm">{product.vendorPartNumber || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">End User Required:</span>
-                        <p className="text-gray-900">{product.endUserRequired === 'True' ? 'Yes' : 'No'}</p>
+                        <span className="text-sm font-medium text-gray-500">Vendor Number:</span>
+                        <p className="text-gray-900 font-mono text-sm">{(product as any).vendorNumber || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Has Discounts:</span>
-                        <p className="text-gray-900">{product.hasDiscounts === 'True' ? 'Yes' : 'No'}</p>
+                        <span className="text-sm font-medium text-gray-500">Product Authorized:</span>
+                        <p className="text-gray-900">{(product as any).productAuthorized === 'True' ? 'Yes' : 'No'}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Has Warranty:</span>
-                        <p className="text-gray-900">{product.hasWarranty === 'True' ? 'Yes' : 'No'}</p>
+                        <span className="text-sm font-medium text-gray-500">Product Status Code:</span>
+                        <p className="text-gray-900">{(product as any).productStatusCode || 'N/A'}</p>
                       </div>
-                      {product.replacementSku && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-500">Replacement SKU:</span>
-                          <p className="text-gray-900 font-mono text-sm">{product.replacementSku}</p>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -377,21 +370,21 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                         )}
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Authorized to Purchase:</span>
+                        <span className="text-sm font-medium text-gray-500">Product Authorized:</span>
                         <p className="text-gray-900">
-                          {product.authorizedToPurchase === 'True' ? 'Yes' : 'No'}
+                          {(product as any).productAuthorized === 'True' ? 'Yes' : 'No'}
                         </p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Product Status:</span>
                         <p className="text-gray-900">
-                          {product.discontinued === 'True' ? 'Discontinued' : 'Active'}
+                          {(product as any).productStatusCode || 'Active'}
                         </p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Direct Ship:</span>
+                        <span className="text-sm font-medium text-gray-500">Vendor:</span>
                         <p className="text-gray-900">
-                          {product.directShip === 'True' ? 'Yes' : 'No'}
+                          {product.vendorName} ({(product as any).vendorNumber})
                         </p>
                       </div>
                     </div>
@@ -441,8 +434,7 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                     <Button
                       variant="primary"
                       disabled={
-                        product.discontinued === 'True' || 
-                        product.authorizedToPurchase === 'False' ||
+                        (product as any).productAuthorized === 'False' ||
                         (priceAvailability?.[0]?.availability && !priceAvailability[0].availability.available)
                       }
                     >
@@ -454,7 +446,7 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                   </div>
                   
                   <div className="text-sm text-gray-500">
-                    Last updated: {product.lastUpdated ? new Date(product.lastUpdated).toLocaleString() : new Date().toLocaleDateString()}
+                    Last updated: {(product as any).lastUpdated ? new Date((product as any).lastUpdated).toLocaleString() : new Date().toLocaleDateString()}
                   </div>
                 </div>
               </div>
@@ -465,3 +457,5 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     </div>
   );
 }
+
+
