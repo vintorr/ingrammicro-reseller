@@ -32,16 +32,47 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     setError(null);
     
     try {
-      const response = await fetch(`/api/ingram/products/${productId}`);
+      console.log('Fetching product details for:', productId);
+      
+      const response = await fetch(`/api/ingram/products/${productId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout and other fetch options
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+      
+      console.log('Product details response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Product details API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('Product details data received:', data);
       setProduct(data);
     } catch (err) {
       console.error('Error fetching product details:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load product details');
+      
+      // Handle different types of errors
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Request timed out. Please try again.');
+        } else if (err.message.includes('Failed to fetch')) {
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to load product details');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,6 +82,8 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
     setPriceLoading(true);
     
     try {
+      console.log('Fetching price and availability for product:', productId);
+      
       const response = await fetch('/api/ingram/price-availability', {
         method: 'POST',
         headers: {
@@ -62,21 +95,46 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
               ingramPartNumber: productId
             }
           ]
-        })
+        }),
+        // Add timeout
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
       
+      console.log('Price availability response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Price availability API error:', errorData);
-        // Don't throw error, just log it and continue without price data
+        const errorText = await response.text();
+        console.error('Price availability API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        // Don't set main error state for price/availability failures
+        // Just log them and continue without price data
+        console.warn('Price availability failed, continuing without price data');
         return;
       }
       
       const data = await response.json();
-      setPriceAvailability(data);
+      console.log('Price availability data received:', data);
+      setPriceAvailability(data.products || data);
     } catch (err) {
       console.error('Error fetching price and availability:', err);
-      // Don't set error state for price/availability failures, just log them
+      
+      // Handle different types of errors but don't set main error state
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          console.warn('Price availability request timed out');
+        } else if (err.message.includes('Failed to fetch')) {
+          console.warn('Price availability network error');
+        } else {
+          console.warn('Price availability error:', err.message);
+        }
+      }
+      
+      // Don't set error state for price/availability failures
+      // The product details can still be shown without pricing
     } finally {
       setPriceLoading(false);
     }
@@ -124,9 +182,14 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Product</h3>
                 <p className="text-gray-500 mb-4">{error}</p>
-                <Button onClick={fetchProductDetails} variant="primary">
-                  Try Again
-                </Button>
+                <div className="space-x-4">
+                  <Button onClick={fetchProductDetails} variant="primary">
+                    Try Again
+                  </Button>
+                  <Button onClick={onClose} variant="secondary">
+                    Close
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -190,65 +253,127 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                         <p className="text-gray-900">{product.subCategory || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">UPC:</span>
-                        <p className="text-gray-900">{product.upcCode || 'N/A'}</p>
-                      </div>
-                      <div>
                         <span className="text-sm font-medium text-gray-500">Product Type:</span>
                         <p className="text-gray-900">{product.productType || 'N/A'}</p>
                       </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Type:</span>
+                        <p className="text-gray-900">{product.type || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">UPC Code:</span>
+                        <p className="text-gray-900 font-mono text-sm">{product.upcCode || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Vendor Part Number:</span>
+                        <p className="text-gray-900 font-mono text-sm">{product.vendorPartNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">End User Required:</span>
+                        <p className="text-gray-900">{product.endUserRequired === 'True' ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Has Discounts:</span>
+                        <p className="text-gray-900">{product.hasDiscounts === 'True' ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Has Warranty:</span>
+                        <p className="text-gray-900">{product.hasWarranty === 'True' ? 'Yes' : 'No'}</p>
+                      </div>
+                      {product.replacementSku && (
+                        <div>
+                          <span className="text-sm font-medium text-gray-500">Replacement SKU:</span>
+                          <p className="text-gray-900 font-mono text-sm">{product.replacementSku}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Pricing & Availability */}
                   <div className="space-y-4">
-                    <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Pricing & Availability
-                      {priceLoading && <LoadingSpinner size="sm" />}
-                    </h4>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        Pricing & Availability
+                        {priceLoading && <LoadingSpinner size="sm" />}
+                      </h4>
+                      {!priceLoading && (!priceAvailability || priceAvailability.length === 0) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={fetchPriceAndAvailability}
+                          className="text-xs"
+                        >
+                          Retry
+                        </Button>
+                      )}
+                    </div>
                     <div className="space-y-3">
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Price:</span>
+                        <span className="text-sm font-medium text-gray-500">Customer Price:</span>
                         {priceLoading ? (
                           <p className="text-gray-500">Loading price...</p>
-                        ) : priceAvailability?.[0]?.pricing ? (
+                        ) : priceAvailability && priceAvailability.length > 0 && priceAvailability[0]?.pricing ? (
                           <div className="space-y-1">
-                            <p className="text-lg font-semibold text-green-600">
+                            <p className="text-2xl font-bold text-green-600">
                               ${priceAvailability[0].pricing.customerPrice} {priceAvailability[0].pricing.currencyCode}
                             </p>
                             {priceAvailability[0].pricing.retailPrice > priceAvailability[0].pricing.customerPrice && (
                               <p className="text-sm text-gray-500 line-through">
-                                MSRP: ${priceAvailability[0].pricing.retailPrice} {priceAvailability[0].pricing.currencyCode}
+                                Retail: ${priceAvailability[0].pricing.retailPrice} {priceAvailability[0].pricing.currencyCode}
+                              </p>
+                            )}
+                            {priceAvailability[0].pricing.mapPrice && (
+                              <p className="text-sm text-blue-600">
+                                MAP: ${priceAvailability[0].pricing.mapPrice} {priceAvailability[0].pricing.currencyCode}
                               </p>
                             )}
                           </div>
                         ) : (
-                          <p className="text-gray-900">Price available on request</p>
+                          <div className="space-y-1">
+                            <p className="text-gray-900">Price available on request</p>
+                            <p className="text-xs text-gray-500">Click "Request Quote" for pricing</p>
+                          </div>
                         )}
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-500">Availability:</span>
                         {priceLoading ? (
                           <p className="text-gray-500">Checking availability...</p>
-                        ) : priceAvailability?.[0]?.availability ? (
-                          <div className="flex items-center gap-2">
-                            {priceAvailability[0].availability.available ? (
-                              <>
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                <span className="text-green-600 font-medium">
-                                  In Stock ({priceAvailability[0].availability.totalAvailability} units)
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <AlertCircle className="h-4 w-4 text-red-500" />
-                                <span className="text-red-600 font-medium">Out of Stock</span>
-                              </>
+                        ) : priceAvailability && priceAvailability.length > 0 && priceAvailability[0]?.availability ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {priceAvailability[0].availability.available ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                  <span className="text-green-600 font-medium">
+                                    In Stock ({priceAvailability[0].availability.totalAvailability} units)
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertCircle className="h-4 w-4 text-red-500" />
+                                  <span className="text-red-600 font-medium">Out of Stock</span>
+                                </>
+                              )}
+                            </div>
+                            {priceAvailability[0].availability.availabilityByWarehouse && 
+                             priceAvailability[0].availability.availabilityByWarehouse.length > 0 && (
+                              <div className="ml-6 space-y-1">
+                                <p className="text-xs font-medium text-gray-500">Warehouse Locations:</p>
+                                {priceAvailability[0].availability.availabilityByWarehouse.map((warehouse: any, index: number) => (
+                                  <div key={index} className="text-xs text-gray-600">
+                                    {warehouse.location}: {warehouse.quantityAvailable} units
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         ) : (
-                          <p className="text-gray-900">Check availability for pricing</p>
+                          <div className="space-y-1">
+                            <p className="text-gray-900">Check availability for pricing</p>
+                            <p className="text-xs text-gray-500">Contact sales for current stock levels</p>
+                          </div>
                         )}
                       </div>
                       <div>
@@ -258,9 +383,15 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                         </p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Status:</span>
+                        <span className="text-sm font-medium text-gray-500">Product Status:</span>
                         <p className="text-gray-900">
                           {product.discontinued === 'True' ? 'Discontinued' : 'Active'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-500">Direct Ship:</span>
+                        <p className="text-gray-900">
+                          {product.directShip === 'True' ? 'Yes' : 'No'}
                         </p>
                       </div>
                     </div>
@@ -268,15 +399,39 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                 </div>
 
                 {/* Additional Information */}
-                {product.extraDescription && (
+                {(product.extraDescription || (product.links && product.links.length > 0)) && (
                   <div className="space-y-4">
                     <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       <Star className="h-5 w-5" />
                       Additional Information
                     </h4>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-700">{product.extraDescription}</p>
-                    </div>
+                    {product.extraDescription && (
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-gray-700">{product.extraDescription}</p>
+                      </div>
+                    )}
+                    {product.links && product.links.length > 0 && (
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium text-gray-700">Related Links:</h5>
+                        <div className="space-y-1">
+                          {product.links.map((link, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {link.topic}
+                              </span>
+                              <a 
+                                href={link.href} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                              >
+                                {link.type}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -299,7 +454,7 @@ export function ProductDetailsModal({ productId, isOpen, onClose }: ProductDetai
                   </div>
                   
                   <div className="text-sm text-gray-500">
-                    Last updated: {new Date().toLocaleDateString()}
+                    Last updated: {product.lastUpdated ? new Date(product.lastUpdated).toLocaleString() : new Date().toLocaleDateString()}
                   </div>
                 </div>
               </div>

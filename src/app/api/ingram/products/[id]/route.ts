@@ -8,16 +8,29 @@ export async function GET(
   try {
     const { id: productId } = await params;
     
+    console.log('Product details API called for product ID:', productId);
+    
     if (!productId) {
+      console.log('Product ID is missing');
       return NextResponse.json(
         { error: 'Product ID is required' },
         { status: 400 }
       );
     }
 
+    console.log('Fetching product details from Ingram API...');
     const productDetails = await productsApi.getProductDetails(productId);
+    console.log('Product details received from Ingram API:', productDetails);
 
-    return NextResponse.json(productDetails);
+    // Enhance product details with additional information if available
+    const enhancedProduct = {
+      ...productDetails,
+      // Add any additional processing here if needed
+      lastUpdated: new Date().toISOString(),
+    };
+
+    console.log('Returning enhanced product details');
+    return NextResponse.json(enhancedProduct);
   } catch (error) {
     console.error('Product details error:', error);
     return NextResponse.json(
