@@ -92,14 +92,14 @@ const ProductSearch = () => {
   useEffect(() => {
     // Load initial products when component mounts
     searchProducts({ pageNumber: 1, pageSize: 20 });
-  }, []);
+  }, [searchProducts]);
 
   // Search products when filters change (only if there's a search query or filters)
   useEffect(() => {
     if (searchQuery.trim() || filters.category || filters.brand) {
       searchProducts({ ...filters, keyword: searchQuery });
     }
-  }, [searchQuery, filters.pageNumber, filters.pageSize, searchProducts]);
+  }, [searchQuery, filters, searchProducts]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -492,7 +492,7 @@ const ProductSearch = () => {
             {/* Mobile Filter Toggle */}
             <div className="lg:hidden mb-4">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
                 className="w-full flex items-center justify-center gap-2"

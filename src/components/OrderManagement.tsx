@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, List, Package, Calendar, DollarSign, User, MapPin, Truck, Eye, Trash2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -24,12 +24,8 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
 
-  // Load initial orders
-  useEffect(() => {
-    loadOrders();
-  }, []);
 
-  const loadOrders = async (params: OrderSearchRequest = searchParams) => {
+  const loadOrders = useCallback(async (params: OrderSearchRequest = searchParams) => {
     setLoading(true);
     setError(null);
 
@@ -64,7 +60,12 @@ const OrderManagement: React.FC<OrderManagementProps> = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  // Load initial orders
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
