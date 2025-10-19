@@ -75,7 +75,7 @@ const ProductSearch = () => {
 
       const validProducts = productsData.filter((product) => {
         if (product.productStatusCode === 'E' || product.errorCode) {
-          console.warn(`Product ${product.ingramPartNumber} has error:`, product.errorMessage || 'Unknown error');
+          console.warn(`Product ${product.ingramPartNumber} has error:`, product.productStatusMessage || 'Unknown error');
           return false;
         }
         return true;

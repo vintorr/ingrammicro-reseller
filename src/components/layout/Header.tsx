@@ -2,9 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Menu, X, ShoppingCart, User, Boxes, Grid2x2 } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
+
+const parseRGB = (cssColor: string | null) => {
+  if (!cssColor) return null;
+  const m = cssColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/i);
+  if (!m) return null;
+  return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
+};
+
+const brightnessFromRGB = ({ r, g, b }: { r: number; g: number; b: number }) =>
+  (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,17 +23,7 @@ export default function Header() {
   const rafRef = useRef<number | null>(null);
   const { totalItems, openCartDrawer } = useCart();
 
-  const parseRGB = (cssColor: string | null) => {
-    if (!cssColor) return null;
-    const m = cssColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/i);
-    if (!m) return null;
-    return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
-  };
-
-  const brightnessFromRGB = ({ r, g, b }: { r: number; g: number; b: number }) =>
-    (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  const determineTextColor = () => {
+  const determineTextColor = useCallback(() => {
     const header = headerRef.current;
     if (!header || typeof document === "undefined") return;
 
@@ -61,7 +61,7 @@ export default function Header() {
     } else {
       setUseDarkText(true);
     }
-  };
+  }, []);
 
   useEffect(() => {
     determineTextColor();
@@ -89,7 +89,7 @@ export default function Header() {
       window.removeEventListener("resize", onScrollOrResize);
       if (mo) mo.disconnect();
     };
-  }, []);
+  }, [determineTextColor]);
 
   const textClass = useDarkText ? "text-gray-900" : "text-white";
   const borderClass = useDarkText ? "border-gray-200" : "border-white/20";
