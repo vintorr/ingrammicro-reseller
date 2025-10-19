@@ -82,6 +82,7 @@ export interface ProductSearchRequest {
   pageSize?: number;
   sortBy?: 'price' | 'name' | 'popularity';
   sortOrder?: 'asc' | 'desc';
+  productStatuses?: string;
 }
 
 export interface ProductSearchResponse {
