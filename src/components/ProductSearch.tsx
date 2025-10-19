@@ -24,24 +24,24 @@ const ProductSearch = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [priceAvailabilityData, setPriceAvailabilityData] = useState<any[] | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
-  
+
   // New UI state
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'popularity'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<{min: number, max: number}>({min: 0, max: 10000});
+  const [priceRange, setPriceRange] = useState<{ min: number, max: number }>({ min: 0, max: 10000 });
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [compareList, setCompareList] = useState<Set<string>>(new Set());
-  
+
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
   const { addToCart } = useCart();
 
   // Batch fetch price and availability for all products
   const fetchBatchPriceAndAvailability = async (products: Product[]) => {
     if (products.length === 0) return;
-    
+
     setPriceLoading(true);
     try {
       const response = await fetch('/api/ingram/price-availability', {
@@ -55,16 +55,16 @@ const ProductSearch = () => {
           }))
         })
       });
-      
+
       if (!response.ok) {
         console.error('Batch price availability API error:', response.status, response.statusText);
         setPriceAvailabilityData([]);
         return;
       }
-      
+
       const data = await response.json();
       const productsData = Array.isArray(data) ? data : (data.products || []);
-      
+
       const validProducts = productsData.filter((product: any) => {
         if (product.productStatusCode === 'E' || product.errorCode) {
           console.warn(`Product ${product.ingramPartNumber} has error:`, product.errorMessage || 'Unknown error');
@@ -72,7 +72,7 @@ const ProductSearch = () => {
         }
         return true;
       });
-      
+
       setPriceAvailabilityData(validProducts);
     } catch (err) {
       console.error('Error fetching batch price and availability:', err);
@@ -104,13 +104,13 @@ const ProductSearch = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    
+
     setFilters(prev => ({ ...prev, keyword: searchQuery, pageNumber: 1 }));
   };
 
   const handleAddToCart = (product: Product) => {
     const productPriceAvailability = getProductPriceAvailability(product.ingramPartNumber);
-    
+
     if (productPriceAvailability?.pricing && productPriceAvailability?.availability?.available) {
       const cartItem = {
         product,
@@ -172,7 +172,7 @@ const ProductSearch = () => {
   const clearFilters = () => {
     setSelectedCategory('');
     setSelectedBrand('');
-    setPriceRange({min: 0, max: 10000});
+    setPriceRange({ min: 0, max: 10000 });
     setFilters(prev => ({ ...prev, category: undefined, brand: undefined, pageNumber: 1 }));
   };
 
@@ -206,64 +206,66 @@ const ProductSearch = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white ">
       {/* Enhanced Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between mb-6">
+      <div className="bg-white mt-10 mb-12">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            {/* Top Section: Title + View Toggle */}
+            <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Product Catalog</h1>
-                <p className="mt-1 text-gray-600">Discover the latest technology solutions</p>
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Product Catalog</h1>
+                <p className="mt-1 text-gray-600 text-base">
+                  Explore our comprehensive range of enterprise-grade technology solutions.
+                </p>
               </div>
-              <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2">
                 <Button
-                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="flex items-center gap-2"
+                  className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-4 py-2 border cursor-pointer ${viewMode === 'grid'
+                      ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-md hover:bg-[#062fa3]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-[#062fa3]/10 hover:border-[#062fa3]/60'
+                    }`}
                 >
                   <Grid className="w-4 h-4" />
                   Grid
                 </Button>
                 <Button
-                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="flex items-center gap-2"
+                  className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-4 py-2 border cursor-pointer ${viewMode === 'list'
+                      ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-md hover:bg-[#062fa3]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-[#062fa3]/10 hover:border-[#062fa3]/60'
+                    }`}
                 >
                   <List className="w-4 h-4" />
                   List
                 </Button>
               </div>
             </div>
-            
-            {/* Enhanced Search Bar */}
+
+            {/* Enhanced Auto Search Bar */}
             <div className="relative">
-              <form onSubmit={handleSearch} className="flex gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for products by keyword, part number, or description..."
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  loading={loading}
-                  disabled={!searchQuery.trim()}
-                  className="px-8 py-3 text-lg"
-                >
-                  Search
-                </Button>
-              </form>
+              <div className="flex-1 relative group">
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-[#062fa3]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search across thousands of verified technology products, components, and enterprise solutions..."
+                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-2xl shadow-sm 
+                       focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]
+                       placeholder:text-gray-500 text-gray-800 transition-all duration-200"
+                />
+              </div>
             </div>
 
             {error && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
                 <p className="text-red-800">{error.message}</p>
               </div>
             )}
@@ -271,11 +273,11 @@ const ProductSearch = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto w-full max-w-screen-xl px-4 md:px-6 lg:px-8 overflow-x-hidden">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Enhanced Sidebar Filters - Desktop Only */}
           <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-8">
+            <div className="bg-white rounded-lg shadow-sm border p-6 sticky">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
                 <Button
@@ -392,7 +394,7 @@ const ProductSearch = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setPriceRange({min: 0, max: 10000});
+                        setPriceRange({ min: 0, max: 10000 });
                       }}
                       className="w-full text-xs text-gray-600 hover:text-gray-800"
                     >
@@ -517,7 +519,7 @@ const ProductSearch = () => {
                       Clear All
                     </Button>
                   </div>
-                  
+
                   {/* Mobile Category Filter */}
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
@@ -608,7 +610,7 @@ const ProductSearch = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Product Grid/List */}
                 <div className="p-6">
                   {viewMode === 'grid' ? (
@@ -659,7 +661,7 @@ const ProductSearch = () => {
                         >
                           Previous
                         </Button>
-                        
+
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                           const page = i + 1;
                           return (
@@ -673,7 +675,7 @@ const ProductSearch = () => {
                             </Button>
                           );
                         })}
-                        
+
                         <Button
                           variant="ghost"
                           size="sm"
@@ -711,8 +713,8 @@ const ProductSearch = () => {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Products</h3>
                   <p className="text-gray-500 mb-4">{error?.message}</p>
-                  <Button 
-                    onClick={() => window.location.reload()} 
+                  <Button
+                    onClick={() => window.location.reload()}
                     variant="primary"
                   >
                     Try Again
