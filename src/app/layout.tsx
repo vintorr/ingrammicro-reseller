@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer"; // ✅ Added Footer import
+import { CartPortal } from "@/components/cart/CartPortal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
           {/* ✅ Gradient footer consistent with header aesthetics */}
           <Footer />
+          <CartPortal />
         </Providers>
       </body>
     </html>

@@ -1,21 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Menu, X, User, Heart, Package, ChevronLeft, ChevronRight, Star, Truck, Shield, Headphones } from 'lucide-react';
-import { CartDrawer } from '@/components/cart/CartDrawer';
+import { Search, Menu, X, User, Heart, Package, ChevronLeft, ChevronRight, Star, Truck, Shield, Headphones } from 'lucide-react';
 import { useCart } from '@/lib/hooks/useCart';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import Link from 'next/link';
 import { ProductCard } from '@/components/product/ProductCard';
 import { useProducts } from '@/lib/hooks/useProducts';
 
 export default function Home() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { totalItems, isOpen, toggleCartDrawer } = useCart();
+  const { addToCart } = useCart();
   const [currentSlide, setCurrentSlide] = useState(0);
   const { products, loading, searchProducts } = useProducts();
-  const { addToCart } = useCart();
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -313,11 +309,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Cart Drawer */}
-      <CartDrawer 
-        isOpen={isOpen} 
-        onClose={() => toggleCartDrawer()} 
-      />
     </div>
   );
 }

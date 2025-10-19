@@ -99,21 +99,43 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           <div className="flex-1 overflow-y-auto p-6">
             {items.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Package className="w-12 h-12 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Your cart is empty
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Start adding products to see them here
-                </p>
-                <Button
-                  onClick={onClose}
-                  className="px-6 bg-black hover:bg-gray-800 text-white"
-                >
-                  Continue Shopping
-                </Button>
+                {lastOrderId ? (
+                  <>
+                    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle className="w-12 h-12 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Order placed successfully!
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Confirmation number: <span className="font-semibold text-gray-900">{lastOrderId}</span>
+                    </p>
+                    <Button
+                      onClick={onClose}
+                      className="px-6 bg-black hover:bg-gray-800 text-white"
+                    >
+                      Close
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Package className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Your cart is empty
+                    </h3>
+                    <p className="text-gray-500 mb-6">
+                      Start adding products to see them here
+                    </p>
+                    <Button
+                      onClick={onClose}
+                      className="px-6 bg-black hover:bg-gray-800 text-white"
+                    >
+                      Continue Shopping
+                    </Button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

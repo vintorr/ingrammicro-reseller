@@ -11,12 +11,14 @@ import {
   Boxes,
   Grid2x2,
 } from "lucide-react";
+import { useCart } from "@/lib/hooks/useCart";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [useDarkText, setUseDarkText] = useState(true);
   const headerRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const { totalItems, openCartDrawer } = useCart();
 
   const parseRGB = (cssColor: string | null) => {
     if (!cssColor) return null;
@@ -102,7 +104,6 @@ export default function Header() {
   const navItems = [
     { name: "Products", href: "/products", icon: Boxes },
     { name: "Categories", href: "/categories", icon: Grid2x2 },
-    { name: "Cart", href: "/cart", icon: ShoppingCart },
     { name: "Account", href: "/account", icon: User },
   ];
 
@@ -146,16 +147,49 @@ export default function Header() {
             <span className="absolute -bottom-[3px] left-0 w-0 h-[2px] bg-current rounded-full transition-all duration-300 group-hover:w-full"></span>
           </Link>
         ))}
+        <button
+          onClick={openCartDrawer}
+          className="relative flex flex-col items-center gap-[2px] transition-all focus:outline-none group"
+          aria-label="Open shopping cart"
+        >
+          <div className="flex items-center gap-2">
+            <ShoppingCart size={18} strokeWidth={2} />
+            <span>Cart</span>
+          </div>
+          <span className="absolute -bottom-[3px] left-0 w-0 h-[2px] bg-current rounded-full transition-all duration-300 group-hover:w-full"></span>
+          {totalItems > 0 && (
+            <span className="absolute -top-3 -right-3 inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+              {totalItems > 99 ? '99+' : totalItems}
+            </span>
+          )}
+        </button>
       </nav>
 
-      {/* Mobile Menu Toggle */}
-      <button
-        className={`md:hidden focus:outline-none ${useDarkText ? "text-gray-900" : "text-white"}`}
-        onClick={() => setMenuOpen((s) => !s)}
-        aria-label="Toggle menu"
-      >
-        {menuOpen ? <X size={26} /> : <Menu size={26} />}
-      </button>
+      {/* Mobile Actions */}
+      <div className="md:hidden flex items-center gap-3">
+        <button
+          onClick={() => {
+            setMenuOpen(false);
+            openCartDrawer();
+          }}
+          className={`relative focus:outline-none ${useDarkText ? "text-gray-900" : "text-white"}`}
+          aria-label="Open shopping cart"
+        >
+          <ShoppingCart size={24} />
+          {totalItems > 0 && (
+            <span className="absolute -top-2 -right-2 inline-flex min-h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.65rem] font-semibold text-white">
+              {totalItems > 99 ? '99+' : totalItems}
+            </span>
+          )}
+        </button>
+        <button
+          className={`focus:outline-none ${useDarkText ? "text-gray-900" : "text-white"}`}
+          onClick={() => setMenuOpen((s) => !s)}
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
+      </div>
 
       {/* Mobile Dropdown */}
       {menuOpen && (
@@ -178,6 +212,25 @@ export default function Header() {
               </div>
             ))}
           </nav>
+          <div className="mt-3 border-t border-gray-200/60 pt-3">
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                openCartDrawer();
+              }}
+              className="w-full flex items-center justify-between gap-2 px-2 py-3 text-gray-900 hover:opacity-80 transition-opacity"
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingCart size={18} strokeWidth={2} />
+                <span>Cart</span>
+              </span>
+              {totalItems > 0 && (
+                <span className="inline-flex min-h-[1.2rem] min-w-[1.2rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
+                  {totalItems > 99 ? '99+' : totalItems}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       )}
     </header>

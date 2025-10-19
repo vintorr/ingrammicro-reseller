@@ -6,7 +6,6 @@ import ProductSearch from './ProductSearch';
 import PriceAvailability from './PriceAvailability';
 import OrderManagement from './OrderManagement';
 import QuoteManagement from './QuoteManagement';
-import { CartDrawer } from './cart/CartDrawer';
 import { useCart } from '@/lib/hooks/useCart';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -19,7 +18,7 @@ interface Tab {
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
-  const { totalItems, isOpen, toggleCartDrawer } = useCart();
+  const { totalItems, openCartDrawer } = useCart();
 
   const tabs: Tab[] = [
     { id: 'products', label: 'Product Search', icon: <Search className="w-4 h-4" /> },
@@ -57,7 +56,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={toggleCartDrawer}
+                onClick={openCartDrawer}
                 className="relative"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -107,11 +106,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Cart Drawer */}
-      <CartDrawer 
-        isOpen={isOpen} 
-        onClose={() => toggleCartDrawer()} 
-      />
     </div>
   );
 };
