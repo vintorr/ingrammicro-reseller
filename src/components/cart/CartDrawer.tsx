@@ -110,8 +110,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </p>
                 <Button
                   onClick={onClose}
-                  variant="primary"
-                  className="px-6"
+                  className="px-6 bg-black hover:bg-gray-800 text-white"
                 >
                   Continue Shopping
                 </Button>
@@ -179,7 +178,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {!showCheckout ? (
                     <>
                       <Button 
-                        className="w-full py-3 text-lg font-semibold"
+                        className="w-full py-3 text-lg font-semibold bg-black hover:bg-gray-800 text-white"
                         onClick={() => setShowCheckout(true)}
                       >
                         <CreditCard className="w-5 h-5 mr-2" />
@@ -233,7 +232,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         <Button
                           onClick={handleCheckout}
                           disabled={isCreatingOrder || !customerOrderNumber.trim()}
-                          className="flex-1"
+                          className="flex-1 bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isCreatingOrder ? (
                             <>

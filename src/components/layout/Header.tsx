@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Menu,
   X,
-  Heart,
   ShoppingCart,
   User,
   Boxes,
@@ -103,7 +102,6 @@ export default function Header() {
   const navItems = [
     { name: "Products", href: "/products", icon: Boxes },
     { name: "Categories", href: "/categories", icon: Grid2x2 },
-    { name: "Wishlist", href: "/wishlist", icon: Heart },
     { name: "Cart", href: "/cart", icon: ShoppingCart },
     { name: "Account", href: "/account", icon: User },
   ];

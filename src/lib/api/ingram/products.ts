@@ -11,16 +11,19 @@ export class ProductsApi {
   async searchProducts(params: ProductSearchRequest): Promise<ProductSearchResponse> {
     // Check if we have the required environment variables
     if (!process.env.INGRAM_CLIENT_ID || !process.env.INGRAM_CLIENT_SECRET) {
-      console.warn('Ingram Micro API credentials not configured. Using mock data.');
-      return this.getMockProducts(params);
+      console.warn('Ingram Micro API credentials not configured.');
+      throw new Error('Ingram Micro API credentials not configured');
     }
 
     try {
       const endpoint = '/resellers/v6/catalog';
-      return apiClient.get<ProductSearchResponse>(endpoint, params);
+      const response = await apiClient.get<ProductSearchResponse>(endpoint, params);
+      
+      
+      return response;
     } catch (error) {
-      console.warn('Ingram Micro API error. Using mock data:', error);
-      return this.getMockProducts(params);
+      console.error('Ingram Micro API error:', error);
+      throw error;
     }
   }
 
@@ -156,6 +159,7 @@ export class ProductsApi {
       );
     }
 
+
     // Pagination
     const pageNumber = params.pageNumber || 1;
     const pageSize = params.pageSize || 20;
@@ -175,16 +179,16 @@ export class ProductsApi {
   async getProductDetails(ingramPartNumber: string): Promise<Product> {
     // Check if we have the required environment variables
     if (!process.env.INGRAM_CLIENT_ID || !process.env.INGRAM_CLIENT_SECRET) {
-      console.warn('Ingram Micro API credentials not configured. Using mock data.');
-      return this.getMockProductDetails(ingramPartNumber);
+      console.warn('Ingram Micro API credentials not configured.');
+      throw new Error('Ingram Micro API credentials not configured');
     }
 
     try {
       const endpoint = `/resellers/v6/catalog/details/${ingramPartNumber}`;
       return apiClient.get<Product>(endpoint);
     } catch (error) {
-      console.warn('Ingram Micro API error. Using mock data:', error);
-      return this.getMockProductDetails(ingramPartNumber);
+      console.error('Ingram Micro API error:', error);
+      throw error;
     }
   }
 
@@ -218,7 +222,8 @@ export class ProductsApi {
   ): Promise<PriceAvailabilityResponse> {
     // Check if we have the required environment variables
     if (!process.env.INGRAM_CLIENT_ID || !process.env.INGRAM_CLIENT_SECRET) {
-      console.warn('Ingram Micro API credentials not configured. Using mock data.');
+      console.warn('Ingram Micro API credentials not configured.');
+      // Return mock data instead of throwing error
       return this.getMockPriceAndAvailability(request);
     }
 
@@ -226,58 +231,97 @@ export class ProductsApi {
       const endpoint = '/resellers/v6/catalog/priceandavailability?includeAvailability=true&includePricing=true';
       const data = await apiClient.post<PriceAvailabilityResponse>(endpoint, request);
       
-      // Check if any products have error status codes
-      const hasErrors = data.some((product: any) => 
-        product.productStatusCode === 'E' || product.errorCode
-      );
+      // Filter out products with errors and log them
+      const validProducts = data.filter((product: any) => {
+        if (product.productStatusCode === 'E' || product.errorCode) {
+          console.warn(`Product ${product.ingramPartNumber} has error:`, product.errorMessage || 'Unknown error');
+          return false;
+        }
+        return true;
+      });
       
-      if (hasErrors) {
-        console.warn('Ingram Micro API returned errors for some products. Using mock data.');
-        return this.getMockPriceAndAvailability(request);
+      // If we have some valid products, return them
+      if (validProducts.length > 0) {
+        console.log(`Successfully retrieved pricing for ${validProducts.length} out of ${data.length} products`);
+        return validProducts;
       }
       
-      return data;
+      // If no valid products, fall back to mock data
+      console.warn('No valid products returned from API, using mock data');
+      return this.getMockPriceAndAvailability(request);
+      
     } catch (error) {
-      console.warn('Ingram Micro API error. Using mock data:', error);
+      console.error('Ingram Micro API error:', error);
+      // Return mock data instead of throwing error
+      console.warn('Falling back to mock data due to API error');
       return this.getMockPriceAndAvailability(request);
     }
   }
 
   private getMockPriceAndAvailability(request: PriceAvailabilityRequest): PriceAvailabilityResponse {
     // Generate mock pricing data - PriceAvailabilityResponse is an array
-    const mockPricing = request.products?.map((product, index) => ({
-      index,
-      productStatusCode: 'Active',
-      productStatusMessage: 'Product is available',
-      ingramPartNumber: product.ingramPartNumber,
-      vendorPartNumber: 'MOCK',
-      upc: '123456789012',
-      errorCode: '',
-      pricing: {
-        retailPrice: Math.floor(Math.random() * 2000) + 100,
-        mapPrice: Math.floor(Math.random() * 1500) + 80,
-        customerPrice: Math.floor(Math.random() * 1200) + 60,
-        currencyCode: 'USD'
-      },
-      availability: {
-        available: Math.random() > 0.3, // 70% chance of being available
-        totalAvailability: Math.floor(Math.random() * 100) + 1,
-        availabilityByWarehouse: [
-          {
-            warehouseId: 'WH001',
-            quantityAvailable: Math.floor(Math.random() * 50) + 1,
-            location: 'Main Warehouse',
-            quantityBackordered: 0,
-            quantityBackorderedEta: '',
-            quantityOnOrder: 0
-          }
-        ]
-      },
-      discounts: [],
-      subscriptionPrice: []
-    })) || [];
+    const mockPricing = request.products?.map((product, index) => {
+      // Create more realistic pricing based on product type
+      const basePrice = this.getRealisticPrice(product.ingramPartNumber);
+      const retailPrice = Math.floor(basePrice * 1.4); // 40% markup
+      const mapPrice = Math.floor(basePrice * 1.2); // 20% markup
+      const customerPrice = Math.floor(basePrice * 1.1); // 10% markup
+      
+      return {
+        index,
+        productStatusCode: 'Active',
+        productStatusMessage: 'Product is available',
+        ingramPartNumber: product.ingramPartNumber,
+        vendorPartNumber: 'MOCK',
+        upc: '123456789012',
+        errorCode: '',
+        pricing: {
+          retailPrice,
+          mapPrice,
+          customerPrice,
+          currencyCode: 'USD'
+        },
+        availability: {
+          available: Math.random() > 0.2, // 80% chance of being available
+          totalAvailability: Math.floor(Math.random() * 50) + 10,
+          availabilityByWarehouse: [
+            {
+              warehouseId: 'WH001',
+              quantityAvailable: Math.floor(Math.random() * 30) + 5,
+              location: 'Main Warehouse',
+              quantityBackordered: Math.random() > 0.8 ? Math.floor(Math.random() * 10) : 0,
+              quantityBackorderedEta: Math.random() > 0.8 ? '2024-02-15' : '',
+              quantityOnOrder: Math.random() > 0.7 ? Math.floor(Math.random() * 20) : 0
+            }
+          ]
+        },
+        discounts: [],
+        subscriptionPrice: []
+      };
+    }) || [];
 
     return mockPricing as PriceAvailabilityResponse;
+  }
+
+  private getRealisticPrice(ingramPartNumber: string): number {
+    // Generate more realistic pricing based on product type
+    const productType = ingramPartNumber.toLowerCase();
+    
+    if (productType.includes('laptop') || productType.includes('notebook')) {
+      return Math.floor(Math.random() * 1500) + 500; // $500-$2000
+    } else if (productType.includes('desktop') || productType.includes('workstation')) {
+      return Math.floor(Math.random() * 2000) + 300; // $300-$2300
+    } else if (productType.includes('server')) {
+      return Math.floor(Math.random() * 5000) + 1000; // $1000-$6000
+    } else if (productType.includes('switch') || productType.includes('router')) {
+      return Math.floor(Math.random() * 2000) + 200; // $200-$2200
+    } else if (productType.includes('storage') || productType.includes('nas')) {
+      return Math.floor(Math.random() * 3000) + 400; // $400-$3400
+    } else if (productType.includes('firewall') || productType.includes('security')) {
+      return Math.floor(Math.random() * 1000) + 300; // $300-$1300
+    } else {
+      return Math.floor(Math.random() * 1000) + 100; // $100-$1100 default
+    }
   }
 
   async getProductsByCategory(category: string, pageNumber = 1, pageSize = 20): Promise<ProductSearchResponse> {

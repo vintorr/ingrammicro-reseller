@@ -32,7 +32,6 @@ const ProductSearch = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [priceRange, setPriceRange] = useState<{ min: number, max: number }>({ min: 0, max: 10000 });
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [compareList, setCompareList] = useState<Set<string>>(new Set());
 
   const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
@@ -145,17 +144,6 @@ const ProductSearch = () => {
     return priceAvailabilityData.find((item: any) => item.ingramPartNumber === ingramPartNumber);
   };
 
-  const toggleFavorite = (productId: string) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(productId)) {
-        newFavorites.delete(productId);
-      } else {
-        newFavorites.add(productId);
-      }
-      return newFavorites;
-    });
-  };
 
   const toggleCompare = (productId: string) => {
     setCompareList(prev => {
@@ -186,86 +174,29 @@ const ProductSearch = () => {
     return [...new Set(brands)].sort();
   };
 
-  // Filter products by price range (client-side filtering)
+  // Filter products (client-side filtering)
   const getFilteredProducts = () => {
     let filtered = products;
-
-    // Apply price range filter
-    if (priceRange.min > 0 || priceRange.max < 10000) {
-      filtered = filtered.filter(product => {
-        const productPrice = getProductPriceAvailability(product.ingramPartNumber);
-        if (productPrice?.pricing?.customerPrice) {
-          const price = productPrice.pricing.customerPrice;
-          return price >= priceRange.min && price <= priceRange.max;
-        }
-        return true; // Include products without price data
-      });
-    }
-
     return filtered;
   };
 
+
   return (
-    <div className="min-h-screen bg-white ">
-      {/* Enhanced Header */}
-      <div className="bg-white mt-10 mb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      {/* Enhanced Header with Glass Effect */}
+      <div className="bg-white/70 backdrop-blur-xl border-b border-white/20 mt-10 mb-12">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            {/* Top Section: Title + View Toggle */}
-            <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Product Catalog</h1>
-                <p className="mt-1 text-gray-600 text-base">
-                  Explore our comprehensive range of enterprise-grade technology solutions.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-4 py-2 border cursor-pointer ${viewMode === 'grid'
-                      ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-md hover:bg-[#062fa3]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-[#062fa3]/10 hover:border-[#062fa3]/60'
-                    }`}
-                >
-                  <Grid className="w-4 h-4" />
-                  Grid
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-4 py-2 border cursor-pointer ${viewMode === 'list'
-                      ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-md hover:bg-[#062fa3]'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-[#062fa3]/10 hover:border-[#062fa3]/60'
-                    }`}
-                >
-                  <List className="w-4 h-4" />
-                  List
-                </Button>
-              </div>
-            </div>
-
-            {/* Enhanced Auto Search Bar */}
-            <div className="relative">
-              <div className="flex-1 relative group">
-                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 transition-colors group-focus-within:text-[#062fa3]" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search across thousands of verified technology products, components, and enterprise solutions..."
-                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-2xl shadow-sm 
-                       focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]
-                       placeholder:text-gray-500 text-gray-800 transition-all duration-200"
-                />
-              </div>
+            {/* Top Section: Title */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 tracking-tight mb-2">Product Catalog</h1>
+              <p className="text-lg text-gray-600">
+                Explore our comprehensive range of enterprise-grade technology solutions.
+              </p>
             </div>
 
             {error && (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+              <div className="mt-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200/50 rounded-2xl">
                 <p className="text-red-800">{error.message}</p>
               </div>
             )}
@@ -273,29 +204,50 @@ const ProductSearch = () => {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-screen-xl px-4 md:px-6 lg:px-8 overflow-x-hidden">
+      <div className="mx-auto w-full max-w-screen-xl px-4 md:px-6 lg:px-8 overflow-x-hidden pb-20 lg:pb-0">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Enhanced Sidebar Filters - Desktop Only */}
           <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border p-6 sticky">
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto z-10">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <h3 className="text-xl font-bold text-gray-900">Filters</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-blue-600 hover:text-blue-700 text-sm"
+                  className="text-[#062fa3] hover:text-[#062fa3]/80 text-sm bg-white/50 hover:bg-white/80 px-4 py-2 rounded-xl"
                 >
                   Clear All
                 </Button>
               </div>
 
+              {/* Search Bar as First Filter */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">Search Products</label>
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5 transition-colors group-focus-within:text-[#062fa3] z-10" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90 min-h-[3rem] resize-none"
+                    style={{ height: 'auto', minHeight: '3rem' }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      target.style.height = 'auto';
+                      target.style.height = Math.max(3 * 16, target.scrollHeight) + 'px';
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Category Filter */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
                   Category
                   {selectedCategory && (
-                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                    <span className="ml-2 text-xs text-[#062fa3] bg-[#062fa3]/10 px-3 py-1 rounded-full border border-[#062fa3]/20">
                       {selectedCategory}
                     </span>
                   )}
@@ -306,7 +258,7 @@ const ProductSearch = () => {
                     setSelectedCategory(e.target.value);
                     setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                 >
                   <option value="">All Categories</option>
                   {products.length > 0 ? (
@@ -321,10 +273,10 @@ const ProductSearch = () => {
 
               {/* Brand Filter */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
                   Brand
                   {selectedBrand && (
-                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                    <span className="ml-2 text-xs text-[#062fa3] bg-[#062fa3]/10 px-3 py-1 rounded-full border border-[#062fa3]/20">
                       {selectedBrand}
                     </span>
                   )}
@@ -335,7 +287,7 @@ const ProductSearch = () => {
                     setSelectedBrand(e.target.value);
                     setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                 >
                   <option value="">All Brands</option>
                   {products.length > 0 ? (
@@ -348,78 +300,23 @@ const ProductSearch = () => {
                 </select>
               </div>
 
-              {/* Price Range Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Price Range
-                  {(priceRange.min > 0 || priceRange.max < 10000) && (
-                    <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                      ${priceRange.min} - ${priceRange.max}
-                    </span>
-                  )}
-                </label>
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">Min Price</label>
-                      <input
-                        type="number"
-                        placeholder="0"
-                        min="0"
-                        value={priceRange.min || ''}
-                        onChange={(e) => {
-                          const min = Number(e.target.value) || 0;
-                          setPriceRange(prev => ({ ...prev, min }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs text-gray-500 mb-1">Max Price</label>
-                      <input
-                        type="number"
-                        placeholder="10000"
-                        min="0"
-                        value={priceRange.max || ''}
-                        onChange={(e) => {
-                          const max = Number(e.target.value) || 10000;
-                          setPriceRange(prev => ({ ...prev, max }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      />
-                    </div>
-                  </div>
-                  {(priceRange.min > 0 || priceRange.max < 10000) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setPriceRange({ min: 0, max: 10000 });
-                      }}
-                      className="w-full text-xs text-gray-600 hover:text-gray-800"
-                    >
-                      Reset Price Range
-                    </Button>
-                  )}
-                </div>
-              </div>
 
               {/* Sort Options */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
                   Sort By
-                  <span className="ml-2 text-xs text-gray-500">
+                  <span className="ml-2 text-xs text-[#062fa3] bg-[#062fa3]/10 px-3 py-1 rounded-full border border-[#062fa3]/20">
                     {sortBy} ({sortOrder})
                   </span>
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value as 'name' | 'price' | 'popularity');
                       setFilters(prev => ({ ...prev, sortBy: e.target.value as 'name' | 'price' | 'popularity', pageNumber: 1 }));
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                   >
                     <option value="name">Name</option>
                     <option value="price">Price</option>
@@ -433,9 +330,13 @@ const ProductSearch = () => {
                         setSortOrder('asc');
                         setFilters(prev => ({ ...prev, sortOrder: 'asc', pageNumber: 1 }));
                       }}
-                      className="flex-1 flex items-center justify-center"
+                      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 ${
+                        sortOrder === 'asc' 
+                          ? 'bg-[#062fa3] text-white shadow-lg' 
+                          : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-white/90'
+                      }`}
                     >
-                      <SortAsc className="w-4 h-4 mr-1" />
+                      <SortAsc className="w-4 h-4 mr-2" />
                       Ascending
                     </Button>
                     <Button
@@ -445,9 +346,13 @@ const ProductSearch = () => {
                         setSortOrder('desc');
                         setFilters(prev => ({ ...prev, sortOrder: 'desc', pageNumber: 1 }));
                       }}
-                      className="flex-1 flex items-center justify-center"
+                      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 ${
+                        sortOrder === 'desc' 
+                          ? 'bg-[#062fa3] text-white shadow-lg' 
+                          : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-white/90'
+                      }`}
                     >
-                      <SortDesc className="w-4 h-4 mr-1" />
+                      <SortDesc className="w-4 h-4 mr-2" />
                       Descending
                     </Button>
                   </div>
@@ -456,30 +361,22 @@ const ProductSearch = () => {
 
               {/* Quick Stats */}
               {products.length > 0 && (
-                <div className="border-t pt-4">
-                  <div className="text-sm text-gray-600 space-y-2">
+                <div className="border-t border-white/20 pt-6">
+                  <div className="text-sm text-gray-600 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span>Products found:</span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-medium">Products found:</span>
+                      <span className="font-bold text-gray-900">
                         {getFilteredProducts().length}
                         {getFilteredProducts().length !== products.length && (
-                          <span className="text-blue-600"> / {products.length}</span>
+                          <span className="text-[#062fa3]"> / {products.length}</span>
                         )}
                       </span>
                     </div>
                     {compareList.size > 0 && (
                       <div className="flex items-center justify-between">
-                        <span>For comparison:</span>
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-medium">For comparison:</span>
+                        <span className="font-bold text-[#062fa3]">
                           {compareList.size}
-                        </span>
-                      </div>
-                    )}
-                    {favorites.size > 0 && (
-                      <div className="flex items-center justify-between">
-                        <span>Favorites:</span>
-                        <span className="font-semibold text-red-600">
-                          {favorites.size}
                         </span>
                       </div>
                     )}
@@ -491,13 +388,43 @@ const ProductSearch = () => {
 
           {/* Main Content Area */}
           <div className="flex-1">
+            {/* View Toggle Buttons - Right Aligned */}
+            <div className="flex items-center justify-end gap-3 mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-6 py-3 border cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-lg hover:bg-[#062fa3]/90'
+                    : 'bg-white/80 text-gray-700 border-white/30 hover:bg-white/90 hover:border-[#062fa3]/50'
+                }`}
+              >
+                <Grid className="w-4 h-4" />
+                Grid View
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-2 rounded-2xl transition-all duration-200 px-6 py-3 border cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-lg hover:bg-[#062fa3]/90'
+                    : 'bg-white/80 text-gray-700 border-white/30 hover:bg-white/90 hover:border-[#062fa3]/50'
+                }`}
+              >
+                <List className="w-4 h-4" />
+                List View
+              </Button>
+            </div>
+
             {/* Mobile Filter Toggle */}
-            <div className="lg:hidden mb-4">
+            <div className="lg:hidden mb-6">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="w-full flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm border border-white/30 hover:bg-white/90 px-6 py-3 rounded-xl"
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 {showFilters ? 'Hide Filters' : 'Show Filters'}
@@ -507,29 +434,50 @@ const ProductSearch = () => {
             {/* Mobile Filters */}
             {showFilters && (
               <div className="lg:hidden mb-6">
-                <div className="bg-white rounded-lg shadow-sm border p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-900">Filters</h3>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearFilters}
-                      className="text-blue-600 hover:text-blue-700 text-sm"
+                      className="text-[#062fa3] hover:text-[#062fa3]/80 text-sm bg-white/50 hover:bg-white/80 px-4 py-2 rounded-xl"
                     >
                       Clear All
                     </Button>
                   </div>
 
+                  {/* Mobile Search Bar */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-800 mb-3">Search Products</label>
+                    <div className="relative group">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5 transition-colors group-focus-within:text-[#062fa3] z-10" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search products..."
+                        className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90 min-h-[3rem] resize-none"
+                        style={{ height: 'auto', minHeight: '3rem' }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLInputElement;
+                          target.style.height = 'auto';
+                          target.style.height = Math.max(3 * 16, target.scrollHeight) + 'px';
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   {/* Mobile Category Filter */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-800 mb-3">Category</label>
                     <select
                       value={selectedCategory}
                       onChange={(e) => {
                         setSelectedCategory(e.target.value);
                         setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                     >
                       <option value="">All Categories</option>
                       {products.length > 0 && getUniqueCategories().map(category => (
@@ -539,15 +487,15 @@ const ProductSearch = () => {
                   </div>
 
                   {/* Mobile Brand Filter */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-800 mb-3">Brand</label>
                     <select
                       value={selectedBrand}
                       onChange={(e) => {
                         setSelectedBrand(e.target.value);
                         setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                     >
                       <option value="">All Brands</option>
                       {products.length > 0 && getUniqueBrands().map(brand => (
@@ -556,65 +504,17 @@ const ProductSearch = () => {
                     </select>
                   </div>
 
-                  {/* Mobile Price Range */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={priceRange.min || ''}
-                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={priceRange.max || ''}
-                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000 }))}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
 
-            {/* Results Header */}
+            {/* Results Content */}
             {products.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border mb-6">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Search Results
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {getFilteredProducts().length} products found
-                        {getFilteredProducts().length !== products.length && (
-                          <span className="text-blue-600"> (filtered from {products.length})</span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {compareList.size > 0 && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Compare ({compareList.size})
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <div className="mb-8">
 
                 {/* Product Grid/List */}
-                <div className="p-6">
-                  {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {getFilteredProducts().map((product) => (
                         <ProductCard
                           key={product.ingramPartNumber}
@@ -623,99 +523,119 @@ const ProductSearch = () => {
                           onViewDetails={handleViewDetails}
                           priceAvailabilityData={priceAvailabilityData}
                           priceLoading={priceLoading}
-                          isFavorite={favorites.has(product.ingramPartNumber)}
                           isInCompare={compareList.has(product.ingramPartNumber)}
-                          onToggleFavorite={() => toggleFavorite(product.ingramPartNumber)}
                           onToggleCompare={() => toggleCompare(product.ingramPartNumber)}
                         />
                       ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {getFilteredProducts().map((product) => (
-                        <ProductListRow
-                          key={product.ingramPartNumber}
-                          product={product}
-                          onAddToCart={handleAddToCart}
-                          onViewDetails={handleViewDetails}
-                          priceAvailabilityData={priceAvailabilityData}
-                          priceLoading={priceLoading}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {getFilteredProducts().map((product) => (
+                      <ProductListRow
+                        key={product.ingramPartNumber}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={handleViewDetails}
+                        priceAvailabilityData={priceAvailabilityData}
+                        priceLoading={priceLoading}
+                      />
+                    ))}
+                  </div>
+                )}
 
-                  {/* Enhanced Pagination */}
-                  {totalPages > 1 && (
-                    <div className="mt-8 flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
+                {/* Enhanced Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-gray-600">
                         Showing page {currentPage} of {totalPages}
-                      </div>
+                      </span>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="flex items-center gap-2"
+                        <span className="text-sm text-gray-600">Items per page:</span>
+                        <select
+                          value={filters.pageSize || 20}
+                          onChange={(e) => {
+                            const newPageSize = parseInt(e.target.value);
+                            setFilters(prev => ({ ...prev, pageSize: newPageSize, pageNumber: 1 }));
+                            searchProducts({ ...filters, pageSize: newPageSize, pageNumber: 1 });
+                          }}
+                          className="px-3 py-1 bg-white/80 backdrop-blur-sm border border-white/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30"
                         >
-                          Previous
-                        </Button>
-
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const page = i + 1;
-                          return (
-                            <Button
-                              key={page}
-                              variant={currentPage === page ? 'primary' : 'ghost'}
-                              size="sm"
-                              onClick={() => handlePageChange(page)}
-                            >
-                              {page}
-                            </Button>
-                          );
-                        })}
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="flex items-center gap-2"
-                        >
-                          Next
-                        </Button>
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-2 bg-white/80 hover:bg-white/90 border border-white/30"
+                      >
+                        Previous
+                      </Button>
+
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? 'primary' : 'ghost'}
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                            className={currentPage === page 
+                              ? 'bg-[#062fa3] text-white' 
+                              : 'bg-white/80 hover:bg-white/90 border border-white/30'
+                            }
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="flex items-center gap-2 bg-white/80 hover:bg-white/90 border border-white/30"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Loading State */}
             {loading && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-8">
                 <div className="flex items-center justify-center">
                   <LoadingSpinner size="lg" />
-                  <span className="ml-2 text-gray-600">Searching products...</span>
+                  <span className="ml-3 text-gray-600 text-lg">Searching products...</span>
                 </div>
               </div>
             )}
 
             {/* Error State */}
             {error && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-8">
                 <div className="text-center">
-                  <div className="text-red-600 mb-2">
-                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="text-red-600 mb-4">
+                    <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Products</h3>
-                  <p className="text-gray-500 mb-4">{error?.message}</p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Products</h3>
+                  <p className="text-gray-600 mb-6">{error?.message}</p>
                   <Button
                     onClick={() => window.location.reload()}
-                    variant="primary"
+                    className="bg-blue-600/90 hover:bg-blue-700/90 text-white px-6 py-3 rounded-xl"
                   >
                     Try Again
                   </Button>
@@ -725,13 +645,13 @@ const ProductSearch = () => {
 
             {/* No Results */}
             {!loading && !error && getFilteredProducts().length === 0 && (searchQuery || priceRange.min > 0 || priceRange.max < 10000) && (
-              <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-                <p className="text-gray-500">No products found matching your search criteria.</p>
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-8 text-center">
+                <p className="text-gray-600 text-lg mb-4">No products found matching your search criteria.</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="mt-4"
+                  className="bg-white/80 hover:bg-white/90 border border-white/30 px-6 py-3 rounded-xl"
                 >
                   Clear Filters
                 </Button>
@@ -740,11 +660,52 @@ const ProductSearch = () => {
 
             {/* Initial State */}
             {!loading && !error && products.length === 0 && !searchQuery && (
-              <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-                <p className="text-gray-500 mb-4">Loading products...</p>
+              <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-8 text-center">
+                <p className="text-gray-600 text-lg mb-4">Loading products...</p>
                 <LoadingSpinner size="lg" />
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Sticky Filter Bar for Mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-white/20 p-4 z-40">
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex-1 flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm border border-white/30 hover:bg-white/90 px-4 py-3 rounded-xl"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-2 rounded-xl transition-all duration-200 px-4 py-3 border cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-lg hover:bg-[#062fa3]/90'
+                  : 'bg-white/80 text-gray-700 border-white/30 hover:bg-white/90 hover:border-[#062fa3]/50'
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-2 rounded-xl transition-all duration-200 px-4 py-3 border cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-[#062fa3] text-white border-[#062fa3] shadow-lg hover:bg-[#062fa3]/90'
+                  : 'bg-white/80 text-gray-700 border-white/30 hover:bg-white/90 hover:border-[#062fa3]/50'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -755,6 +716,7 @@ const ProductSearch = () => {
           productId={selectedProductId}
           isOpen={isDetailsModalOpen}
           onClose={handleCloseDetails}
+          onAddToCart={handleAddToCart}
         />
       )}
     </div>
