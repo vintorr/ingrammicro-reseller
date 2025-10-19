@@ -13,29 +13,38 @@ import { Badge } from './ui/Badge';
 import { formatCurrency } from '@/lib/utils/formatters';
 import type { Product, ProductSearchRequest, PriceAvailabilityResponse } from '@/lib/types';
 
+const DEFAULT_PRICE_RANGE = { min: 0, max: 10000 };
+const DEFAULT_PAGE_SIZE = 10;
+
 const ProductSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filters, setFilters] = useState<ProductSearchRequest>({
     pageNumber: 1,
-    pageSize: 20,
+    pageSize: DEFAULT_PAGE_SIZE,
+    sortBy: 'name',
+    sortOrder: 'asc',
+    productStatuses: 'ACTIVE',
   });
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [priceAvailabilityData, setPriceAvailabilityData] = useState<any[] | null>(null);
+  const [priceAvailabilityData, setPriceAvailabilityData] = useState<PriceAvailabilityResponse | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
 
   // New UI state
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'popularity'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<{ min: number, max: number }>({ min: 0, max: 10000 });
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>(() => ({
+    ...DEFAULT_PRICE_RANGE,
+  }));
   const [compareList, setCompareList] = useState<Set<string>>(new Set());
 
-  const { products, loading, error, totalPages, currentPage, searchProducts } = useProducts();
+  const { products, loading, error, totalPages, currentPage, totalRecords, searchProducts } = useProducts();
   const { addToCart } = useCart();
+  const currentSortBy = filters.sortBy ?? 'name';
+  const currentSortOrder = filters.sortOrder ?? 'asc';
 
   // Batch fetch price and availability for all products
   const fetchBatchPriceAndAvailability = async (products: Product[]) => {
@@ -57,20 +66,20 @@ const ProductSearch = () => {
 
       if (!response.ok) {
         console.error('Batch price availability API error:', response.status, response.statusText);
-        setPriceAvailabilityData([]);
+        setPriceAvailabilityData([] as PriceAvailabilityResponse);
         return;
       }
 
       const data = await response.json();
-      const productsData = Array.isArray(data) ? data : (data.products || []);
+      const productsData = (Array.isArray(data) ? data : data.products || []) as PriceAvailabilityResponse;
 
-      const validProducts = productsData.filter((product: any) => {
+      const validProducts = productsData.filter((product) => {
         if (product.productStatusCode === 'E' || product.errorCode) {
           console.warn(`Product ${product.ingramPartNumber} has error:`, product.errorMessage || 'Unknown error');
           return false;
         }
         return true;
-      });
+      }) as PriceAvailabilityResponse;
 
       setPriceAvailabilityData(validProducts);
     } catch (err) {
@@ -84,27 +93,40 @@ const ProductSearch = () => {
   useEffect(() => {
     if (products.length > 0) {
       fetchBatchPriceAndAvailability(products);
+    } else {
+      setPriceAvailabilityData(null);
     }
   }, [products]);
 
-  // Auto-load products on component mount
+  // Fetch products whenever search parameters change.
   useEffect(() => {
-    // Load initial products when component mounts
-    searchProducts({ pageNumber: 1, pageSize: 20 });
-  }, [searchProducts]);
+    const handler = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 700);
 
-  // Search products when filters change (only if there's a search query or filters)
+    return () => {
+      window.clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
   useEffect(() => {
-    if (searchQuery.trim() || filters.category || filters.brand) {
-      searchProducts({ ...filters, keyword: searchQuery });
-    }
-  }, [searchQuery, filters, searchProducts]);
+    const keyword = debouncedSearchQuery.trim();
+    searchProducts({
+      ...filters,
+      keyword: keyword || undefined,
+    });
+  }, [filters, searchProducts, debouncedSearchQuery]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setFilters(prev => ({ ...prev, keyword: searchQuery, pageNumber: 1 }));
+    setFilters(prev => {
+      const currentPage = prev.pageNumber ?? 1;
+      if (currentPage === 1) {
+        return prev;
+      }
+      return { ...prev, pageNumber: 1 };
+    });
+    setDebouncedSearchQuery(searchQuery);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -134,14 +156,29 @@ const ProductSearch = () => {
   };
 
   const handlePageChange = (page: number) => {
+    const currentPage = filters.pageNumber ?? 1;
+    if (page < 1 || page === currentPage) {
+      return;
+    }
+    if (totalPages && page > totalPages) {
+      return;
+    }
     setFilters(prev => ({ ...prev, pageNumber: page }));
-    searchProducts({ ...filters, pageNumber: page });
   };
 
   // Helper functions
   const getProductPriceAvailability = (ingramPartNumber: string) => {
     if (!priceAvailabilityData) return null;
     return priceAvailabilityData.find((item: any) => item.ingramPartNumber === ingramPartNumber);
+  };
+
+  const resolveProductPrice = (product: Product) => {
+    const availability = getProductPriceAvailability(product.ingramPartNumber);
+    if (!availability?.pricing) {
+      return null;
+    }
+    const { customerPrice, retailPrice, mapPrice } = availability.pricing;
+    return customerPrice ?? retailPrice ?? mapPrice ?? null;
   };
 
 
@@ -160,8 +197,16 @@ const ProductSearch = () => {
   const clearFilters = () => {
     setSelectedCategory('');
     setSelectedBrand('');
-    setPriceRange({ min: 0, max: 10000 });
-    setFilters(prev => ({ ...prev, category: undefined, brand: undefined, pageNumber: 1 }));
+    setPriceRange({ ...DEFAULT_PRICE_RANGE });
+    setFilters(prev => ({
+      ...prev,
+      category: undefined,
+      brand: undefined,
+      sortBy: 'name',
+      sortOrder: 'asc',
+      pageNumber: 1,
+      keyword: undefined,
+    }));
   };
 
   const getUniqueCategories = () => {
@@ -177,8 +222,58 @@ const ProductSearch = () => {
   // Filter products (client-side filtering)
   const getFilteredProducts = () => {
     let filtered = products;
-    return filtered;
+
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (product) => (product.productCategory || product.category) === selectedCategory
+      );
+    }
+
+    if (selectedBrand) {
+      filtered = filtered.filter((product) => product.vendorName === selectedBrand);
+    }
+
+    const isPriceFilterActive =
+      priceRange.min > DEFAULT_PRICE_RANGE.min || priceRange.max < DEFAULT_PRICE_RANGE.max;
+
+    if (isPriceFilterActive) {
+      filtered = filtered.filter((product) => {
+        const price = resolveProductPrice(product);
+        if (price === null) {
+          return false;
+        }
+        return price >= priceRange.min && price <= priceRange.max;
+      });
+    }
+
+    const sorted = [...filtered];
+
+    if (currentSortBy === 'price') {
+      sorted.sort((a, b) => {
+        const priceA = resolveProductPrice(a);
+        const priceB = resolveProductPrice(b);
+        const normalizedA =
+          priceA ?? (currentSortOrder === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+        const normalizedB =
+          priceB ?? (currentSortOrder === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+        return currentSortOrder === 'asc' ? normalizedA - normalizedB : normalizedB - normalizedA;
+      });
+    } else if (currentSortBy === 'name') {
+      sorted.sort((a, b) => {
+        const nameA = (a.description || a.vendorPartNumber || a.ingramPartNumber || '').toLowerCase();
+        const nameB = (b.description || b.vendorPartNumber || b.ingramPartNumber || '').toLowerCase();
+        return currentSortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      });
+    }
+
+    return sorted;
   };
+
+  const filteredProducts = getFilteredProducts();
+  const pageSize = filters.pageSize || DEFAULT_PAGE_SIZE;
+  const displayedCount = filteredProducts.length;
+  const pageStart = displayedCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+  const pageEnd = displayedCount > 0 ? pageStart + displayedCount - 1 : 0;
 
 
   return (
@@ -255,8 +350,15 @@ const ProductSearch = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
+                    const value = e.target.value;
+                    setSelectedCategory(value);
+                    setFilters(prev => {
+                      const nextCategory = value || undefined;
+                      if (prev.category === nextCategory && (prev.pageNumber ?? 1) === 1) {
+                        return prev;
+                      }
+                      return { ...prev, category: nextCategory, pageNumber: 1 };
+                    });
                   }}
                   className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                 >
@@ -284,8 +386,15 @@ const ProductSearch = () => {
                 <select
                   value={selectedBrand}
                   onChange={(e) => {
-                    setSelectedBrand(e.target.value);
-                    setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
+                    const value = e.target.value;
+                    setSelectedBrand(value);
+                    setFilters(prev => {
+                      const nextBrand = value || undefined;
+                      if (prev.brand === nextBrand && (prev.pageNumber ?? 1) === 1) {
+                        return prev;
+                      }
+                      return { ...prev, brand: nextBrand, pageNumber: 1 };
+                    });
                   }}
                   className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                 >
@@ -306,15 +415,20 @@ const ProductSearch = () => {
                 <label className="block text-sm font-semibold text-gray-800 mb-3">
                   Sort By
                   <span className="ml-2 text-xs text-[#062fa3] bg-[#062fa3]/10 px-3 py-1 rounded-full border border-[#062fa3]/20">
-                    {sortBy} ({sortOrder})
+                    {currentSortBy} ({currentSortOrder})
                   </span>
                 </label>
                 <div className="space-y-4">
-                  <select
-                    value={sortBy}
+                    <select
+                    value={currentSortBy}
                     onChange={(e) => {
-                      setSortBy(e.target.value as 'name' | 'price' | 'popularity');
-                      setFilters(prev => ({ ...prev, sortBy: e.target.value as 'name' | 'price' | 'popularity', pageNumber: 1 }));
+                      const newSort = e.target.value as 'name' | 'price' | 'popularity';
+                      setFilters(prev => {
+                        if (prev.sortBy === newSort && (prev.pageNumber ?? 1) === 1) {
+                          return prev;
+                        }
+                        return { ...prev, sortBy: newSort, pageNumber: 1 };
+                      });
                     }}
                     className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                   >
@@ -324,14 +438,18 @@ const ProductSearch = () => {
                   </select>
                   <div className="flex gap-2">
                     <Button
-                      variant={sortOrder === 'asc' ? 'primary' : 'ghost'}
+                      variant={currentSortOrder === 'asc' ? 'primary' : 'ghost'}
                       size="sm"
                       onClick={() => {
-                        setSortOrder('asc');
-                        setFilters(prev => ({ ...prev, sortOrder: 'asc', pageNumber: 1 }));
+                        setFilters(prev => {
+                          if (prev.sortOrder === 'asc') {
+                            return prev;
+                          }
+                          return { ...prev, sortOrder: 'asc', pageNumber: 1 };
+                        });
                       }}
                       className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 ${
-                        sortOrder === 'asc' 
+                        currentSortOrder === 'asc' 
                           ? 'bg-[#062fa3] text-white shadow-lg' 
                           : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-white/90'
                       }`}
@@ -340,14 +458,18 @@ const ProductSearch = () => {
                       Ascending
                     </Button>
                     <Button
-                      variant={sortOrder === 'desc' ? 'primary' : 'ghost'}
+                      variant={currentSortOrder === 'desc' ? 'primary' : 'ghost'}
                       size="sm"
                       onClick={() => {
-                        setSortOrder('desc');
-                        setFilters(prev => ({ ...prev, sortOrder: 'desc', pageNumber: 1 }));
+                        setFilters(prev => {
+                          if (prev.sortOrder === 'desc') {
+                            return prev;
+                          }
+                          return { ...prev, sortOrder: 'desc', pageNumber: 1 };
+                        });
                       }}
                       className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 ${
-                        sortOrder === 'desc' 
+                        currentSortOrder === 'desc' 
                           ? 'bg-[#062fa3] text-white shadow-lg' 
                           : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-white/90'
                       }`}
@@ -360,15 +482,15 @@ const ProductSearch = () => {
               </div>
 
               {/* Quick Stats */}
-              {products.length > 0 && (
+              {(products.length > 0 || totalRecords > 0) && (
                 <div className="border-t border-white/20 pt-6">
                   <div className="text-sm text-gray-600 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium">Products found:</span>
                       <span className="font-bold text-gray-900">
-                        {getFilteredProducts().length}
-                        {getFilteredProducts().length !== products.length && (
-                          <span className="text-[#062fa3]"> / {products.length}</span>
+                        {filteredProducts.length}
+                        {totalRecords > 0 && (
+                          <span className="text-[#062fa3]"> / {totalRecords}</span>
                         )}
                       </span>
                     </div>
@@ -474,8 +596,15 @@ const ProductSearch = () => {
                     <select
                       value={selectedCategory}
                       onChange={(e) => {
-                        setSelectedCategory(e.target.value);
-                        setFilters(prev => ({ ...prev, category: e.target.value || undefined, pageNumber: 1 }));
+                        const value = e.target.value;
+                        setSelectedCategory(value);
+                        setFilters(prev => {
+                          const nextCategory = value || undefined;
+                          if (prev.category === nextCategory && (prev.pageNumber ?? 1) === 1) {
+                            return prev;
+                          }
+                          return { ...prev, category: nextCategory, pageNumber: 1 };
+                        });
                       }}
                       className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                     >
@@ -492,8 +621,15 @@ const ProductSearch = () => {
                     <select
                       value={selectedBrand}
                       onChange={(e) => {
-                        setSelectedBrand(e.target.value);
-                        setFilters(prev => ({ ...prev, brand: e.target.value || undefined, pageNumber: 1 }));
+                        const value = e.target.value;
+                        setSelectedBrand(value);
+                        setFilters(prev => {
+                          const nextBrand = value || undefined;
+                          if (prev.brand === nextBrand && (prev.pageNumber ?? 1) === 1) {
+                            return prev;
+                          }
+                          return { ...prev, brand: nextBrand, pageNumber: 1 };
+                        });
                       }}
                       className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30 focus:border-[#062fa3]/50 transition-all duration-200 hover:bg-white/90"
                     >
@@ -515,7 +651,7 @@ const ProductSearch = () => {
                 {/* Product Grid/List */}
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {getFilteredProducts().map((product) => (
+                      {filteredProducts.map((product) => (
                         <ProductCard
                           key={product.ingramPartNumber}
                           product={product}
@@ -530,7 +666,7 @@ const ProductSearch = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {getFilteredProducts().map((product) => (
+                    {filteredProducts.map((product) => (
                       <ProductListRow
                         key={product.ingramPartNumber}
                         product={product}
@@ -544,20 +680,29 @@ const ProductSearch = () => {
                 )}
 
                 {/* Enhanced Pagination */}
-                {totalPages > 1 && (
+                {totalRecords > 0 && (
                   <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gray-600">
-                        Showing page {currentPage} of {totalPages}
+                        {displayedCount > 0
+                          ? `Showing ${pageStart}-${pageEnd} of ${totalRecords || pageEnd}`
+                          : 'No products to display'}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Items per page:</span>
+                        <span className="text-sm text-gray-600">
+                          Items per page:{' '}
+                          <span className="font-semibold text-gray-900">{pageSize}</span>
+                        </span>
                         <select
-                          value={filters.pageSize || 20}
+                          value={filters.pageSize || DEFAULT_PAGE_SIZE}
                           onChange={(e) => {
-                            const newPageSize = parseInt(e.target.value);
-                            setFilters(prev => ({ ...prev, pageSize: newPageSize, pageNumber: 1 }));
-                            searchProducts({ ...filters, pageSize: newPageSize, pageNumber: 1 });
+                            const newPageSize = parseInt(e.target.value, 10);
+                            setFilters(prev => {
+                              if (prev.pageSize === newPageSize && (prev.pageNumber ?? 1) === 1) {
+                                return prev;
+                              }
+                              return { ...prev, pageSize: newPageSize, pageNumber: 1 };
+                            });
                           }}
                           className="px-3 py-1 bg-white/80 backdrop-blur-sm border border-white/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#062fa3]/30"
                         >
@@ -601,7 +746,7 @@ const ProductSearch = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage >= totalPages}
                         className="flex items-center gap-2 bg-white/80 hover:bg-white/90 border border-white/30"
                       >
                         Next
@@ -644,7 +789,7 @@ const ProductSearch = () => {
             )}
 
             {/* No Results */}
-            {!loading && !error && getFilteredProducts().length === 0 && (searchQuery || priceRange.min > 0 || priceRange.max < 10000) && (
+            {!loading && !error && filteredProducts.length === 0 && (searchQuery || priceRange.min > 0 || priceRange.max < 10000) && (
               <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-8 text-center">
                 <p className="text-gray-600 text-lg mb-4">No products found matching your search criteria.</p>
                 <Button

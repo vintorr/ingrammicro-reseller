@@ -8,6 +8,7 @@ export function useProducts() {
   const [error, setError] = useState<Error | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   const searchProducts = useCallback(async (params: ProductSearchRequest) => {
     setLoading(true);
@@ -39,8 +40,13 @@ export function useProducts() {
       
       const data: ProductSearchResponse = await response.json();
       setProducts(data.catalog || []);
-      setTotalPages(Math.ceil((data.recordsFound || 0) / (data.pageSize || 20)));
-      setCurrentPage(data.pageNumber || 1);
+      setTotalRecords(typeof data.recordsFound === 'number' ? data.recordsFound : data.catalog?.length || 0);
+      if (typeof data.totalPages === 'number') {
+        setTotalPages(data.totalPages);
+      } else {
+        setTotalPages(Math.ceil((data.recordsFound || 0) / (data.pageSize || params.pageSize || 20)));
+      }
+      setCurrentPage(data.pageNumber || params.pageNumber || 1);
     } catch (err) {
       console.error('useProducts: API error:', err);
       setError(err as Error);
@@ -72,6 +78,7 @@ export function useProducts() {
     error,
     totalPages,
     currentPage,
+    totalRecords,
     searchProducts,
     getProductDetails,
   };
