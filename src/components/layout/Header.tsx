@@ -3,20 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import {
-  Menu,
-  X,
-  ShoppingCart,
-  User,
-  Boxes,
-  Grid2x2,
-} from "lucide-react";
+import { Menu, X, ShoppingCart, User, Boxes, Grid2x2 } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [useDarkText, setUseDarkText] = useState(true);
-  const headerRef = useRef<HTMLElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const { totalItems, openCartDrawer } = useCart();
 
@@ -108,16 +101,12 @@ export default function Header() {
   ];
 
   return (
-    <header
-      ref={headerRef}
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50
-        w-[94%] md:w-[90%] lg:w-[85%] max-w-[1200px]
-        rounded-2xl px-[clamp(0.8rem,3.5vw,2.5rem)] py-[clamp(0.45rem,1vw,0.9rem)]
-        flex items-center justify-between
-        backdrop-blur-3xl bg-white/15 border shadow-lg
-        transition-all duration-300 ${textClass} ${borderClass}`}
-      style={{ height: 72 }}
-    >
+    <header className="fixed top-4 left-0 right-0 z-50 px-4 sm:px-6">
+      <div
+        ref={headerRef}
+        className={`mx-auto flex w-full max-w-screen-xl items-center justify-between rounded-2xl px-[clamp(0.8rem,3.5vw,2.5rem)] py-[clamp(0.45rem,1vw,0.9rem)] backdrop-blur-3xl bg-white/15 border shadow-lg transition-all duration-300 ${textClass} ${borderClass}`}
+        style={{ height: 72 }}
+      >
       {/* Logo */}
       <Link href="/" className="flex items-center">
         <div className="relative" style={{ transform: "scale(0.85)", marginTop: -1 }}>
@@ -166,7 +155,7 @@ export default function Header() {
       </nav>
 
       {/* Mobile Actions */}
-      <div className="md:hidden flex items-center gap-3">
+      <div className="flex items-center gap-3 md:hidden">
         <button
           onClick={() => {
             setMenuOpen(false);
@@ -178,7 +167,7 @@ export default function Header() {
           <ShoppingCart size={24} />
           {totalItems > 0 && (
             <span className="absolute -top-2 -right-2 inline-flex min-h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.65rem] font-semibold text-white">
-              {totalItems > 99 ? '99+' : totalItems}
+              {totalItems > 99 ? "99+" : totalItems}
             </span>
           )}
         </button>
@@ -193,22 +182,20 @@ export default function Header() {
 
       {/* Mobile Dropdown */}
       {menuOpen && (
-        <div className="absolute top-full left-0 w-full mt-3 p-4 md:p-6 rounded-2xl border shadow-lg bg-white text-gray-900 border-gray-200">
+        <div className="absolute top-full left-0 right-0 mt-3 rounded-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-lg md:hidden">
           <nav className="flex flex-col items-stretch text-lg font-medium">
             {navItems.map(({ name, href, icon: Icon }, idx) => (
               <div key={name}>
                 <Link
                   href={href}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-2 py-3 hover:opacity-80 transition-opacity text-gray-900"
+                  className="flex items-center gap-2 px-2 py-3 text-gray-900 transition-opacity hover:opacity-80"
                 >
                   <Icon size={18} strokeWidth={2} />
                   <span>{name}</span>
                 </Link>
 
-                {idx < navItems.length - 1 && (
-                  <div className="mx-4 border-t border-gray-200/60" />
-                )}
+                {idx < navItems.length - 1 && <div className="mx-4 border-t border-gray-200/60" />}
               </div>
             ))}
           </nav>
@@ -218,7 +205,7 @@ export default function Header() {
                 setMenuOpen(false);
                 openCartDrawer();
               }}
-              className="w-full flex items-center justify-between gap-2 px-2 py-3 text-gray-900 hover:opacity-80 transition-opacity"
+              className="flex w-full items-center justify-between gap-2 px-2 py-3 text-gray-900 transition-opacity hover:opacity-80"
             >
               <span className="flex items-center gap-2">
                 <ShoppingCart size={18} strokeWidth={2} />
@@ -226,13 +213,14 @@ export default function Header() {
               </span>
               {totalItems > 0 && (
                 <span className="inline-flex min-h-[1.2rem] min-w-[1.2rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                  {totalItems > 99 ? '99+' : totalItems}
+                  {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
             </button>
           </div>
         </div>
       )}
+      </div>
     </header>
   );
 }

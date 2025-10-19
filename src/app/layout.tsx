@@ -36,7 +36,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <Header />
 
           {/* ✅ Main content (with padding to prevent overlap under header) */}
-          <main className="pt-20">{children}</main>
+          <main className="pt-24">
+            <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8">
+              {children}
+            </div>
+          </main>
 
           {/* ✅ Gradient footer consistent with header aesthetics */}
           <Footer />
