@@ -1,44 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star, Truck, Shield, Headphones } from 'lucide-react';
+import { useEffect } from 'react';
+import { BarChart3, CheckCircle, Sparkles, Star, Truck, Shield, Headphones } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/product/ProductCard';
 import { useProducts } from '@/lib/hooks/useProducts';
 import { useCart } from '@/lib/hooks/useCart';
 
+const heroStats = [
+  { label: 'Skus ready to ship', value: '475K+', sub: 'Multi-vendor catalog' },
+  { label: 'US distribution centers', value: '35', sub: 'Late cut-off windows' },
+  { label: 'Customer satisfaction', value: '98%', sub: 'Post-order CSAT score' },
+];
+
 export const HomePageClient = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const { products, loading, searchProducts } = useProducts();
   const { addToCart } = useCart();
-
-  const carouselSlides = [
-    {
-      id: 1,
-      title: "Latest Technology Solutions",
-      subtitle: "Discover cutting-edge products for your business",
-      image: "/api/placeholder/800/400",
-      cta: "Shop Now",
-      link: "/products"
-    },
-    {
-      id: 2,
-      title: "Enterprise Solutions",
-      subtitle: "Scalable technology for growing businesses",
-      image: "/api/placeholder/800/400",
-      cta: "Learn More",
-      link: "/categories"
-    },
-    {
-      id: 3,
-      title: "Expert Support",
-      subtitle: "24/7 technical support from our experts",
-      image: "/api/placeholder/800/400",
-      cta: "Get Support",
-      link: "/contact"
-    }
-  ];
 
   const features = [
     {
@@ -83,14 +61,6 @@ export const HomePageClient = () => {
     searchProducts({ pageNumber: 1, pageSize: 8 });
   }, [searchProducts]);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
-  };
-
   const handleAddToCart = (product: any) => {
     const cartItem = {
       product,
@@ -103,62 +73,109 @@ export const HomePageClient = () => {
 
   return (
     <div className="space-y-16">
-      <section className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="relative overflow-hidden rounded-lg">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {carouselSlides.map((slide) => (
-                <div key={slide.id} className="w-full flex-shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 pr-8">
-                      <h1 className="text-4xl md:text-6xl font-bold mb-4">
-                        {slide.title}
-                      </h1>
-                      <p className="text-xl md:text-2xl mb-8 text-blue-100">
-                        {slide.subtitle}
-                      </p>
-                      <Link href={slide.link}>
-                        <Button size="lg" variant="secondary">
-                          {slide.cta}
-                        </Button>
-                      </Link>
-                    </div>
-                    <div className="flex-1">
-                      <div className="bg-gray-200 rounded-lg h-80 flex items-center justify-center">
-                        <span className="text-gray-500">Hero Image</span>
-                      </div>
-                    </div>
+      <section className="relative overflow-hidden rounded-[32px] gradient-hero text-[var(--color-foreground)] shadow-[0_24px_48px_rgba(16,35,71,0.08)]">
+        <div className="absolute inset-0">
+          <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-[var(--color-primary-light)] blur-[120px]" />
+          <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[rgba(96,165,250,0.25)] blur-[160px]" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-12">
+          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div className="max-w-2xl space-y-7">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-white/85 px-4 py-1 text-sm font-medium text-[var(--color-primary)] shadow-[0_10px_20px_rgba(37,99,235,0.08)]">
+                <Sparkles className="h-4 w-4" />
+                Technology commerce reimagined
+              </span>
+              <h1 className="text-[clamp(2.3rem,4vw,3.6rem)] font-semibold leading-tight">
+                Build, sell, and deliver outcomes your customers can feel.
+              </h1>
+              <p className="text-base leading-relaxed text-[var(--color-muted)]">
+                Real-time catalog intelligence, lifecycle services, and procurement automation—designed for
+                resellers, MSPs, and enterprise procurement desks who need to move faster with less friction.
+              </p>
+
+              <div className="grid gap-3 pt-1 sm:grid-cols-2">
+                <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 shadow-[0_8px_18px_rgba(16,35,71,0.08)]">
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-[var(--color-primary)]" />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-foreground)]">Outcome-led expertise</p>
+                    <p className="text-sm text-[var(--color-muted)]">
+                      Solution architects and licensing specialists embedded in every engagement.
+                    </p>
                   </div>
                 </div>
-              ))}
+                <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 shadow-[0_8px_18px_rgba(16,35,71,0.08)]">
+                  <BarChart3 className="mt-0.5 h-5 w-5 text-[var(--color-primary)]" />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-foreground)]">Procurement velocity</p>
+                    <p className="text-sm text-[var(--color-muted)]">
+                      Punchout, EDI, and API integrations tuned for high-volume transaction flows.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                <Link href="/products">
+                  <Button size="lg">Browse catalog</Button>
+                </Link>
+                <Link href="/contact">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="border-[var(--color-border)] bg-white/90 text-[var(--color-foreground)] hover:bg-white"
+                  >
+                    Talk to a specialist
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="grid gap-4 pt-6 sm:grid-cols-3">
+                {heroStats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl border border-[var(--color-border)] bg-white/90 px-4 py-3 text-center shadow-[0_10px_24px_rgba(16,35,71,0.06)]"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-muted)]">{stat.label}</p>
+                    <p className="mt-1 text-2xl font-semibold text-[var(--color-foreground)]">{stat.value}</p>
+                    <p className="text-xs text-[var(--color-muted)]">{stat.sub}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+            <div className="space-y-5 rounded-[28px] border border-[var(--color-border)] bg-white/90 p-8 shadow-[0_22px_48px_rgba(16,35,71,0.12)]">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                  Platform snapshot
+                </p>
+                <h2 className="text-xl font-semibold text-[var(--color-foreground)]">
+                  Built for lifecycle outcomes—not just transactions.
+                </h2>
+                <p className="text-sm text-[var(--color-muted)]">
+                  Launch new practices, expand recurring revenue, and modernize procurement without rebuilding
+                  your tech stack from scratch.
+                </p>
+              </div>
 
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-              {carouselSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
-              ))}
+              <div className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-primary-light)]/60 p-5">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--color-muted)]">Real-time insights</p>
+                  <p className="mt-1 text-lg font-semibold text-[var(--color-foreground)]">Contract pricing API</p>
+                  <p className="text-xs text-[var(--color-muted)]">
+                    Instant price & availability with promotions and attach suggestions surfaced for each SKU.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white p-5">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-muted)]">Lifecycle automation</p>
+                <ul className="space-y-2 text-sm text-[var(--color-muted)]">
+                  <li>• Guided quoting flows with margin checkpoints.</li>
+                  <li>• Renewal orchestration and warranty automation.</li>
+                  <li>• Services attach playbooks across cloud, security, and workplace.</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

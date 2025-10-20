@@ -17,9 +17,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className="font-sans antialiased bg-gray-950 text-white"
-      >
+      <body className="font-sans antialiased text-[var(--color-foreground)]">
         <Providers>
           {/* ✅ Glassy transparent header visible on all pages */}
           <Header />
