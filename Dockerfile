@@ -9,7 +9,8 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+# Install all dependencies (including dev) for the build stage. Dev deps such as tailwindcss are required at build time.
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
