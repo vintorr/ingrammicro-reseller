@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, DollarSign, Package, FileText, ShoppingCart } from 'lucide-react';
 import ProductSearch from './ProductSearch';
 import PriceAvailability from './PriceAvailability';
@@ -18,7 +19,8 @@ interface Tab {
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('products');
-  const { totalItems, openCartDrawer } = useCart();
+  const router = useRouter();
+  const { totalItems } = useCart();
 
   const tabs: Tab[] = [
     { id: 'products', label: 'Product Search', icon: <Search className="w-4 h-4" /> },
@@ -56,7 +58,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={openCartDrawer}
+                onClick={() => router.push('/cart')}
                 className="relative"
               >
                 <ShoppingCart className="w-5 h-5" />

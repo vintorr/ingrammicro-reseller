@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Menu, X, ShoppingCart, User, Boxes, Grid2x2 } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
 
@@ -21,7 +22,8 @@ export default function Header() {
   const [useDarkText, setUseDarkText] = useState(true);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
-  const { totalItems, openCartDrawer } = useCart();
+  const router = useRouter();
+  const { totalItems } = useCart();
 
   const determineTextColor = useCallback(() => {
     const header = headerRef.current;
@@ -136,11 +138,11 @@ export default function Header() {
             <span className="absolute -bottom-[3px] left-0 w-0 h-[2px] bg-current rounded-full transition-all duration-300 group-hover:w-full"></span>
           </Link>
         ))}
-        <button
-          onClick={openCartDrawer}
-          className="relative flex flex-col items-center gap-[2px] transition-all focus:outline-none group"
-          aria-label="Open shopping cart"
-        >
+          <button
+            onClick={() => router.push("/cart")}
+            className="relative flex flex-col items-center gap-[2px] transition-all focus:outline-none group"
+            aria-label="Open shopping cart"
+          >
           <div className="flex items-center gap-2">
             <ShoppingCart size={18} strokeWidth={2} />
             <span>Cart</span>
@@ -159,7 +161,7 @@ export default function Header() {
         <button
           onClick={() => {
             setMenuOpen(false);
-            openCartDrawer();
+            router.push("/cart");
           }}
           className={`relative focus:outline-none ${useDarkText ? "text-gray-900" : "text-white"}`}
           aria-label="Open shopping cart"
@@ -203,7 +205,7 @@ export default function Header() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                openCartDrawer();
+                router.push("/cart");
               }}
               className="flex w-full items-center justify-between gap-2 px-2 py-3 text-gray-900 transition-opacity hover:opacity-80"
             >

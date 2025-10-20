@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Heart, Share2, ShoppingCart, Star, Truck, Shield, RotateCcw, Package, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, ShoppingCart, Star, Truck, Shield, RotateCcw, CheckCircle, AlertCircle, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -22,9 +22,6 @@ export default function ProductDetailsPage() {
   const [priceLoading, setPriceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
-
-
   const fetchProductDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -220,180 +217,147 @@ export default function ProductDetailsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
-            <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-32 h-32 bg-gray-300 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-16 h-16 text-gray-500" />
-                </div>
-                <p className="text-gray-500">Product Image</p>
-              </div>
+        <div className="space-y-8">
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="info">{product.vendorName}</Badge>
+              {product.newProduct === 'True' && <Badge variant="success">New</Badge>}
+              {product.directShip === 'True' && <Badge variant="info">Direct Ship</Badge>}
+              {product.discontinued === 'True' && <Badge variant="warning">Discontinued</Badge>}
             </div>
 
-            {/* Thumbnail Images */}
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((index) => (
-                <div
-                  key={index}
-                  className={`aspect-square bg-gray-100 rounded-lg cursor-pointer border-2 ${
-                    selectedImage === index - 1 ? 'border-blue-500' : 'border-transparent'
-                  }`}
-                  onClick={() => setSelectedImage(index - 1)}
-                >
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">{index}</span>
+            <h1 className="text-3xl font-bold text-gray-900">{product.description}</h1>
+
+            <div className="grid gap-3 sm:grid-cols-2 text-sm text-gray-600">
+              <p><span className="font-medium">SKU:</span> {product.ingramPartNumber}</p>
+              <p><span className="font-medium">UPC:</span> {product.upc || 'N/A'}</p>
+              <p><span className="font-medium">Category:</span> {product.productCategory || 'N/A'}</p>
+              <p><span className="font-medium">Subcategory:</span> {product.productSubcategory || 'N/A'}</p>
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg p-6 border border-gray-200">
+                {priceLoading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    <span className="text-gray-600">Loading pricing...</span>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Product Details */}
-          <div className="space-y-6">
-            {/* Product Info */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="info">{product.vendorName}</Badge>
-                {product.newProduct === 'True' && <Badge variant="success">New</Badge>}
-                {product.directShip === 'True' && <Badge variant="info">Direct Ship</Badge>}
-              </div>
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {product.description}
-              </h1>
-              
-              <div className="space-y-2 text-sm text-gray-600">
-                <p><span className="font-medium">SKU:</span> {product.ingramPartNumber}</p>
-                <p><span className="font-medium">UPC:</span> {product.upc}</p>
-                <p><span className="font-medium">Category:</span> {product.productCategory}</p>
-                <p><span className="font-medium">Subcategory:</span> {product.productSubcategory}</p>
-              </div>
-            </div>
-
-            {/* Pricing */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
-              {priceLoading ? (
-                <div className="flex items-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  <span className="text-gray-600">Loading pricing...</span>
-                </div>
-              ) : productData?.pricing ? (
-                <div className="space-y-3">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-bold text-green-600">
-                      {formatCurrency(productData.pricing.customerPrice, productData.pricing.currencyCode)}
-                    </span>
-                    {productData.pricing.retailPrice > productData.pricing.customerPrice && (
-                      <span className="text-lg text-gray-500 line-through">
-                        {formatCurrency(productData.pricing.retailPrice, productData.pricing.currencyCode)}
+                ) : productData?.pricing ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-baseline gap-3">
+                      <span className="text-3xl font-bold text-green-600">
+                        {formatCurrency(productData.pricing.customerPrice, productData.pricing.currencyCode)}
                       </span>
+                      {productData.pricing.retailPrice > productData.pricing.customerPrice && (
+                        <span className="text-lg text-gray-500 line-through">
+                          {formatCurrency(productData.pricing.retailPrice, productData.pricing.currencyCode)}
+                        </span>
+                      )}
+                    </div>
+                    {productData.pricing.retailPrice > productData.pricing.customerPrice && (
+                      <p className="text-sm text-green-600 font-medium">
+                        Save{' '}
+                        {formatCurrency(
+                          productData.pricing.retailPrice - productData.pricing.customerPrice,
+                          productData.pricing.currencyCode
+                        )}
+                        !
+                      </p>
                     )}
                   </div>
-                  
-                  {productData.pricing.retailPrice > productData.pricing.customerPrice && (
-                    <p className="text-sm text-green-600 font-medium">
-                      Save {formatCurrency(productData.pricing.retailPrice - productData.pricing.customerPrice, productData.pricing.currencyCode)}!
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-600">Price available on request</p>
-              )}
-            </div>
+                ) : (
+                  <p className="text-gray-600">Price available on request</p>
+                )}
+              </div>
 
-            {/* Availability */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
-              {priceLoading ? (
-                <p className="text-gray-600">Checking availability...</p>
-              ) : productData?.availability ? (
-                <div className="flex items-center gap-3">
-                  {productData.availability.available ? (
-                    <>
-                      <CheckCircle className="w-6 h-6 text-green-500" />
-                      <div>
-                        <p className="text-green-600 font-semibold">
-                          In Stock ({productData.availability.totalAvailability} available)
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Ships from {productData.availability.availabilityByWarehouse[0]?.location}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-6 h-6 text-red-500" />
-                      <p className="text-red-600 font-semibold">Out of Stock</p>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-600">Check availability for pricing</p>
-              )}
-            </div>
-
-            {/* Quantity and Add to Cart */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity
-                  </label>
-                  <div className="flex items-center border border-gray-300 rounded-lg w-fit">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="rounded-r-none border-r border-gray-300"
-                    >
-                      -
-                    </Button>
-                    <span className="text-lg font-semibold w-16 text-center py-2">
-                      {quantity}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="rounded-l-none border-l border-gray-300"
-                    >
-                      +
-                    </Button>
+              <div className="bg-white rounded-lg p-6 border border-gray-200">
+                {priceLoading ? (
+                  <p className="text-gray-600">Checking availability...</p>
+                ) : productData?.availability ? (
+                  <div className="flex items-center gap-3">
+                    {productData.availability.available ? (
+                      <>
+                        <CheckCircle className="w-6 h-6 text-green-500" />
+                        <div>
+                          <p className="text-green-600 font-semibold">
+                            In Stock ({productData.availability.totalAvailability} available)
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Ships from {productData.availability.availabilityByWarehouse[0]?.location}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-6 h-6 text-red-500" />
+                        <p className="text-red-600 font-semibold">Out of Stock</p>
+                      </>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-gray-600">Check availability for pricing</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg p-6 border border-gray-200">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                    <div className="flex items-center border border-gray-300 rounded-lg w-fit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="rounded-r-none border-r border-gray-300"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-16 py-2 text-center text-lg font-semibold">{quantity}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="rounded-l-none border-l border-gray-300"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={!productData?.availability?.available}
+                    className="w-full py-3 text-lg font-semibold"
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Add to Cart
+                  </Button>
                 </div>
+              </div>
 
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={!productData?.availability?.available}
-                  className="w-full py-3 text-lg font-semibold"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
-                </Button>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
+                  <Truck className="mx-auto mb-2 h-8 w-8 text-blue-600" />
+                  <p className="text-sm font-medium text-gray-900">Fast Shipping</p>
+                  <p className="text-xs text-gray-600">1-2 business days</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
+                  <Shield className="mx-auto mb-2 h-8 w-8 text-green-600" />
+                  <p className="text-sm font-medium text-gray-900">Secure Transactions</p>
+                  <p className="text-xs text-gray-600">SSL encrypted checkout</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
+                  <RotateCcw className="mx-auto mb-2 h-8 w-8 text-purple-600" />
+                  <p className="text-sm font-medium text-gray-900">Hassle-free Returns</p>
+                  <p className="text-xs text-gray-600">30-day policy</p>
+                </div>
               </div>
             </div>
-
-            {/* Trust Indicators */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <Truck className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Fast Shipping</p>
-                <p className="text-xs text-gray-600">1-2 business days</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Secure</p>
-                <p className="text-xs text-gray-600">SSL encrypted</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
-                <RotateCcw className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Returns</p>
-                <p className="text-xs text-gray-600">30 day policy</p>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { Providers } from "./providers";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer"; // ✅ Added Footer import
-import { CartPortal } from "@/components/cart/CartPortal";
 import "./globals.css";
 
 export const metadata = {
@@ -31,7 +30,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
           {/* ✅ Gradient footer consistent with header aesthetics */}
           <Footer />
-          <CartPortal />
         </Providers>
       </body>
     </html>

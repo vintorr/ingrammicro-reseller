@@ -45,7 +45,6 @@ export const createOrder = createAsyncThunk(
 
 interface CartState {
   items: CartItem[];
-  isOpen: boolean;
   totalItems: number;
   subtotal: number;
   tax: number;
@@ -57,7 +56,6 @@ interface CartState {
 
 const initialState: CartState = {
   items: [],
-  isOpen: false,
   totalItems: 0,
   subtotal: 0,
   tax: 0,
@@ -127,14 +125,6 @@ export const cartSlice = createSlice({
       state.total = 0;
     },
 
-    toggleCart: (state) => {
-      state.isOpen = !state.isOpen;
-    },
-
-    setCartOpen: (state, action: PayloadAction<boolean>) => {
-      state.isOpen = action.payload;
-    },
-
     createOrderStart: (state) => {
       state.isCreatingOrder = true;
       state.orderError = null;
@@ -190,8 +180,6 @@ export const {
   removeItem, 
   updateQuantity, 
   clearCart, 
-  toggleCart, 
-  setCartOpen,
   createOrderStart,
   createOrderSuccess,
   createOrderFailure,
