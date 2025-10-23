@@ -115,25 +115,239 @@ export interface TrackingInfo {
 
 export interface OrderCreateRequest {
   customerOrderNumber: string;
+  endCustomerOrderNumber?: string;
+  billToAddressId?: string;
+  specialBidNumber?: string;
   notes?: string;
-  lines: Array<{
-    customerLineNumber: string;
-    ingramPartNumber: string;
-    quantity: number;
-  }>;
-  additionalAttributes?: Array<{
-    attributeName: string;
-    attributeValue: string;
-  }>;
+  acceptBackOrder?: boolean;
+  resellerInfo?: OrderCreateResellerInfo;
+  vmf?: OrderCreateVendorManagedFulfillment;
+  shipToInfo?: OrderCreateShipToInfo;
+  endUserInfo?: OrderCreateEndUserInfo;
+  lines: OrderCreateRequestLine[];
+  shipmentDetails?: OrderCreateShipmentDetails;
+  additionalAttributes?: OrderCreateAdditionalAttribute[];
+}
+
+export interface OrderCreateResellerInfo {
+  resellerId?: string;
+  companyName?: string;
+  contact?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
+  phoneNumber?: string | number;
+  email?: string;
+}
+
+export interface OrderCreateVendorManagedFulfillment {
+  vendAuthNumber?: string;
+}
+
+export interface OrderCreateShipToInfo {
+  addressId?: string;
+  contact?: string;
+  companyName?: string;
+  name1?: string;
+  name2?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface OrderCreateEndUserInfo {
+  endUserId?: string;
+  contact?: string;
+  companyName?: string;
+  name1?: string;
+  name2?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface OrderCreateRequestLine {
+  customerLineNumber: string;
+  ingramPartNumber: string;
+  quantity: number;
+  specialBidNumber?: string;
+  notes?: string;
+  unitPrice?: number;
+  endUserPrice?: number;
+  additionalAttributes?: OrderCreateLineAdditionalAttribute[];
+  warrantyInfo?: OrderCreateLineWarrantyInfo[];
+}
+
+export interface OrderCreateLineAdditionalAttribute {
+  attributeName?: string;
+  attributeValue?: string;
+}
+
+export interface OrderCreateLineWarrantyInfo {
+  directLineLink?: string;
+  warrantyLineLink?: string;
+  hardwareLineLink?: string;
+  serialInfo?: OrderCreateLineWarrantySerialInfo[];
+}
+
+export interface OrderCreateLineWarrantySerialInfo {
+  serialNumber?: string;
+  shipDate?: string;
+}
+
+export interface OrderCreateShipmentDetails {
+  carrierCode?: string;
+  freightAccountNumber?: string;
+  shipComplete?: 'true' | 'C' | 'P' | 'E';
+  requestedDeliveryDate?: string;
+  signatureRequired?: boolean;
+  shippingInstructions?: string;
+}
+
+export interface OrderCreateAdditionalAttribute {
+  attributeName?: string;
+  attributeValue?: string;
 }
 
 export interface OrderCreateResponse {
-  orderNumber: string;
-  orderId: string;
-  status: string;
-  orderTotal: number;
-  items: OrderLine[];
-  estimatedDelivery?: string;
+  customerOrderNumber?: string;
+  endCustomerOrderNumber?: string;
+  billToAddressId?: string;
+  specialBidNumber?: string;
+  orderSplit?: boolean;
+  processedPartially?: boolean;
+  purchaseOrderTotal?: number;
+  shipToInfo?: OrderCreateResponseShipToInfo;
+  endUserInfo?: OrderCreateResponseEndUserInfo;
+  orders?: OrderCreateResponseOrder[];
+}
+
+export interface OrderCreateResponseShipToInfo {
+  addressId?: string;
+  contact?: string;
+  companyName?: string;
+  name1?: string;
+  name2?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface OrderCreateResponseEndUserInfo {
+  endUserId?: string;
+  contact?: string;
+  companyName?: string;
+  name1?: string;
+  name2?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  addressLine4?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  countryCode?: string;
+  phoneNumber?: string;
+  email?: string;
+}
+
+export interface OrderCreateResponseOrder {
+  numberOfLinesWithSuccess?: number;
+  numberOfLinesWithError?: number;
+  numberOfLinesWithWarning?: number;
+  ingramOrderNumber?: string;
+  ingramOrderDate?: string;
+  notes?: string;
+  orderType?: string;
+  orderTotal?: number;
+  freightCharges?: number;
+  totalTax?: number;
+  currencyCode?: string;
+  lines?: OrderCreateResponseOrderLine[];
+  miscellaneousCharges?: OrderCreateResponseMiscCharge[];
+  links?: OrderCreateResponseLink[];
+  rejectedLineItems?: OrderCreateResponseRejectedLineItem[];
+  additionalAttributes?: OrderCreateResponseAdditionalAttribute[];
+}
+
+export interface OrderCreateResponseOrderLine {
+  subOrderNumber?: string;
+  ingramLineNumber?: string;
+  customerLineNumber?: string;
+  lineStatus?: string;
+  ingramPartNumber?: string;
+  vendorPartNumber?: string;
+  unitPrice?: number;
+  extendedUnitPrice?: number;
+  quantityOrdered?: number;
+  quantityConfirmed?: number;
+  quantityBackOrdered?: number;
+  specialBidNumber?: string;
+  notes?: string;
+  shipmentDetails?: OrderCreateResponseOrderLineShipmentDetail[];
+  additionalAttributes?: OrderCreateResponseAdditionalAttribute[];
+}
+
+export interface OrderCreateResponseOrderLineShipmentDetail {
+  carrierCode?: string;
+  carrierName?: string;
+  shipFromWarehouseId?: string;
+  shipFromLocation?: string;
+  freightAccountNumber?: string;
+  signatureRequired?: string;
+  shippingInstructions?: string;
+}
+
+export interface OrderCreateResponseMiscCharge {
+  subOrderNumber?: string;
+  chargeLineReference?: string;
+  chargeDescription?: string;
+  chargeAmount?: number;
+}
+
+export interface OrderCreateResponseLink {
+  topic?: string;
+  href?: string;
+  type?: string;
+}
+
+export interface OrderCreateResponseRejectedLineItem {
+  customerLinenumber?: string;
+  ingramPartNumber?: string;
+  vendorPartNumber?: string;
+  quantityOrdered?: number;
+  rejectCode?: string;
+  rejectReason?: string;
+}
+
+export interface OrderCreateResponseAdditionalAttribute {
+  attributeName?: string;
+  attributeValue?: string;
 }
 
 export interface OrderSearchResponse {

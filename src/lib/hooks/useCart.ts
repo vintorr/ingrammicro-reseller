@@ -1,6 +1,14 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
-import { addItem, removeItem, updateQuantity, clearCart, createOrder } from '../store/cartSlice';
+import {
+  addItem,
+  removeItem,
+  updateQuantity,
+  clearCart,
+  createOrder,
+  type CreateOrderResult,
+  type CartOrderPayload,
+} from '../store/cartSlice';
 import type { CartItem } from '../types';
 
 export function useCart() {
@@ -27,7 +35,7 @@ export function useCart() {
     dispatch(clearCart());
   };
 
-  const createOrderFromCart = async (customerOrderNumber: string, notes?: string) => {
+  const createOrderFromCart = async (orderInput: Omit<CartOrderPayload, 'lines'>): Promise<CreateOrderResult> => {
     if (cart.items.length === 0) {
       throw new Error('Cart is empty');
     }
@@ -39,8 +47,7 @@ export function useCart() {
     }));
 
     return dispatch(createOrder({
-      customerOrderNumber,
-      notes,
+      ...orderInput,
       lines,
     })).unwrap();
   };
