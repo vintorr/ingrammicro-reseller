@@ -44,6 +44,7 @@ export const CartPageClient = () => {
   const [localError, setLocalError] = useState<string | null>(null);
   const [acceptBackOrder, setAcceptBackOrder] = useState(true);
   const [includeEndUser, setIncludeEndUser] = useState(false);
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const initialAddress = {
     companyName: '',
     contact: '',
@@ -119,18 +120,70 @@ export const CartPageClient = () => {
       return;
     }
 
+    const trimmedShipToEmail = shipTo.email.trim();
+    if (trimmedShipToEmail && !emailPattern.test(trimmedShipToEmail)) {
+      setLocalError('Please enter a valid shipping email address.');
+      return;
+    }
+
+    const trimmedCountry = shipTo.countryCode.trim();
+    if (!/^[A-Za-z]{2}$/.test(trimmedCountry)) {
+      setLocalError('Country code must be a two-letter ISO code (e.g., US).');
+      return;
+    }
+
+    const trimmedState = shipTo.state.trim();
+    if (trimmedCountry.toUpperCase() === 'US' && !/^[A-Za-z]{2}$/.test(trimmedState)) {
+      setLocalError('State must be a two-letter code when shipping to the United States.');
+      return;
+    }
+
     const shipToPayload = toOrderAddress(shipTo);
     if (!shipToPayload) {
       setLocalError('Unable to build shipping information. Please verify the shipping form.');
       return;
     }
 
-    const endUserPayload = includeEndUser ? toOrderAddress(endUser) : undefined;
-    const shouldSendEndUser =
-      !!endUserPayload &&
-      (['companyName', 'contact', 'addressLine1'] as Array<keyof typeof endUser>).some(
-        (field) => Boolean(endUserPayload?.[field]),
-      );
+    let endUserPayload: ReturnType<typeof toOrderAddress> | undefined;
+    let shouldSendEndUser = false;
+
+    if (includeEndUser) {
+      const requiredEndUserFields: Array<keyof typeof endUser> = [
+        'companyName',
+        'addressLine1',
+        'city',
+        'state',
+        'postalCode',
+        'countryCode',
+      ];
+
+      const missingEndUserField = requiredEndUserFields.find((field) => !endUser[field].trim());
+      if (missingEndUserField) {
+        setLocalError('Please fill in all required end user information.');
+        return;
+      }
+
+      const trimmedEndUserEmail = endUser.email.trim();
+      if (trimmedEndUserEmail && !emailPattern.test(trimmedEndUserEmail)) {
+        setLocalError('Please enter a valid end user email address.');
+        return;
+      }
+
+      const trimmedEndUserCountry = endUser.countryCode.trim();
+      if (!/^[A-Za-z]{2}$/.test(trimmedEndUserCountry)) {
+        setLocalError('End user country code must be a two-letter ISO code.');
+        return;
+      }
+
+      const trimmedEndUserState = endUser.state.trim();
+      if (trimmedEndUserCountry.toUpperCase() === 'US' && !/^[A-Za-z]{2}$/.test(trimmedEndUserState)) {
+        setLocalError('End user state must be a two-letter code when located in the United States.');
+        return;
+      }
+
+      endUserPayload = toOrderAddress(endUser);
+      shouldSendEndUser = Boolean(endUserPayload);
+    }
     setLocalError(null);
     try {
       const orderPayload = {

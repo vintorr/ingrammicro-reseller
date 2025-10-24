@@ -78,25 +78,7 @@ export const createOrder = createAsyncThunk<CreateOrderResult, CartOrderPayload,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        let detailedMessage: string | undefined;
-
-        if (Array.isArray(errorData?.details) && errorData.details.length > 0) {
-          const firstDetail = errorData.details[0];
-          detailedMessage =
-            typeof firstDetail === 'string'
-              ? firstDetail
-              : firstDetail?.message || firstDetail?.description || firstDetail?.errorDescription;
-        } else if (typeof errorData?.details === 'string') {
-          detailedMessage = errorData.details;
-        }
-
-        const message =
-          detailedMessage ||
-          errorData?.message ||
-          errorData?.error ||
-          'Failed to create order';
-        throw new Error(message);
+        throw new Error('Failed to checkout order. Try again later.');
       }
 
       const result: OrderCreateResponse = await response.json();
@@ -112,7 +94,7 @@ export const createOrder = createAsyncThunk<CreateOrderResult, CartOrderPayload,
 
       return resultPayload;
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error');
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to checkout order. Try again later.');
     }
   }
 );
