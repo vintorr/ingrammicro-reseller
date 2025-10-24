@@ -3,6 +3,8 @@ import type {
   Order,
   OrderCreateRequest,
   OrderCreateResponse,
+  OrderSearchRequest,
+  OrderSearchResponse,
 } from '../../types';
 
 export class OrdersApi {
@@ -16,18 +18,9 @@ export class OrdersApi {
     return apiClient.get<Order>(endpoint);
   }
 
-  async searchOrders(params: {
-    customerOrderNumber?: string;
-    endCustomerOrderNumber?: string;
-    orderNumber?: string;
-    orderStatus?: string;
-    fromDate?: string;
-    toDate?: string;
-    page?: number;
-    size?: number;
-  }): Promise<{ orders: Order[]; totalCount: number }> {
+  async searchOrders(params: OrderSearchRequest): Promise<OrderSearchResponse> {
     const endpoint = '/resellers/v6/orders/search';
-    return apiClient.get(endpoint, params);
+    return apiClient.get<OrderSearchResponse>(endpoint, params as Record<string, any>);
   }
 
   async cancelOrder(orderNumber: string): Promise<void> {

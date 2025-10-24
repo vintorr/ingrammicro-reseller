@@ -1,5 +1,6 @@
 import { ordersApi } from '../../../../../lib/api/ingram/orders';
 import { NextRequest, NextResponse } from 'next/server';
+import type { OrderSearchResponse } from '../../../../../lib/types';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,25 @@ export async function GET(
     const orderDetails = await ordersApi.getOrderDetails(orderNumber);
     return NextResponse.json(orderDetails);
   } catch (error) {
-    console.error('Order details error:', error);
+    console.error('Order details primary error:', error);
+
+    // Fallback: attempt to pull order data from search endpoint
+    try {
+      const { orderNumber } = await params;
+      const searchResult: OrderSearchResponse = await ordersApi.searchOrders({
+        orderNumber,
+        pageNumber: 1,
+        pageSize: 1,
+      });
+
+      const fallbackOrder = searchResult.orders?.[0];
+      if (fallbackOrder) {
+        return NextResponse.json(fallbackOrder);
+      }
+    } catch (fallbackError) {
+      console.error('Order details fallback error:', fallbackError);
+    }
+
     return NextResponse.json(
       { 
         error: 'Failed to fetch order details',
