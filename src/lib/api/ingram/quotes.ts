@@ -1,50 +1,15 @@
 import { apiClient } from '../client';
-
-export interface Quote {
-  quoteNumber: string;
-  quoteId: string;
-  status: string;
-  customerName: string;
-  customerEmail: string;
-  items: QuoteItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  createdDate: string;
-  expiryDate: string;
-}
-
-export interface QuoteItem {
-  ingramPartNumber: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  description: string;
-}
-
-export interface QuoteCreateRequest {
-  customerName: string;
-  customerEmail: string;
-  items: Array<{
-    partNumber: string;
-    quantity: number;
-    description: string;
-  }>;
-}
-
-export interface QuoteSearchParams {
-  page?: number;
-  size?: number;
-  quoteNumber?: string;
-  status?: string;
-  fromDate?: string;
-  toDate?: string;
-}
+import type {
+  Quote,
+  QuoteCreateRequest,
+  QuoteSearchParams,
+  QuoteSearchResponse,
+} from '../../types';
 
 export class QuotesApi {
-  async searchQuotes(params: QuoteSearchParams): Promise<{ quotes: Quote[]; totalCount: number }> {
-    const endpoint = '/resellers/v6/quotes';
-    return apiClient.get(endpoint, params);
+  async searchQuotes(params: QuoteSearchParams = {}): Promise<QuoteSearchResponse> {
+    const endpoint = '/resellers/v6/quotes/search';
+    return apiClient.get<QuoteSearchResponse>(endpoint, params as Record<string, any>);
   }
 
   async getQuoteDetails(quoteNumber: string): Promise<Quote> {
@@ -54,16 +19,16 @@ export class QuotesApi {
 
   async createQuote(request: QuoteCreateRequest): Promise<Quote> {
     const endpoint = '/resellers/v6/quotes';
-    const quoteData = {
+    const payload = {
       customerName: request.customerName,
       customerEmail: request.customerEmail,
       products: request.items.map(item => ({
         ingramPartNumber: item.partNumber,
         quantity: item.quantity,
-        description: item.description
-      }))
+        description: item.description,
+      })),
     };
-    return apiClient.post<Quote>(endpoint, quoteData);
+    return apiClient.post<Quote>(endpoint, payload);
   }
 }
 

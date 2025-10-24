@@ -428,3 +428,53 @@ export interface QuoteCreateRequest {
     description: string;
   }>;
 }
+
+export interface QuoteSearchParams {
+  pageNumber?: number;
+  pageSize?: number;
+  quoteNumber?: string;
+  quoteName?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+  sortBy?: string;
+  sortingOrder?: 'asc' | 'desc';
+  specialBidNumber?: string;
+  endUserContact?: string;
+  vendorName?: string;
+}
+
+export interface QuoteSearchResponse {
+  recordsFound?: number;
+  pageSize?: number;
+  pageNumber?: number;
+  quotes?: QuoteSummary[];
+  nextPage?: string;
+  prevPage?: string;
+}
+
+export interface QuoteSummary {
+  quoteGuid?: string;
+  quoteName?: string;
+  quoteNumber?: string;
+  revision?: string;
+  currencyCode?: string;
+  endUserContact?: string;
+  endUserName?: string;
+  specialBidNumber?: string;
+  quoteTotal?: number;
+  quoteStatus?: string;
+  ingramQuoteDate?: string;
+  lastModifiedDate?: string;
+  ingramQuoteExpiryDate?: string;
+  vendor?: string;
+  createdBy?: string;
+  quoteType?: string;
+  links?: QuoteSummaryLink[];
+}
+
+export interface QuoteSummaryLink {
+  topic?: string;
+  href?: string;
+  type?: string;
+}

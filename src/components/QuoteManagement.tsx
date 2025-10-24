@@ -6,7 +6,7 @@ import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { LoadingSpinner } from './ui/LoadingSpinner';
 import { formatCurrency, formatDate } from '@/lib/utils/formatters';
-import type { Quote, QuoteCreateRequest } from '@/lib/types';
+import type { Quote, QuoteCreateRequest, QuoteSummary } from '@/lib/types';
 
 interface QuoteManagementProps {}
 
@@ -26,7 +26,7 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   const [activeView, setActiveView] = useState<'create' | 'search' | 'list'>('create');
   const [quoteNumber, setQuoteNumber] = useState('');
   const [quoteDetails, setQuoteDetails] = useState<Quote | null>(null);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [quotes, setQuotes] = useState<QuoteSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,19 +37,20 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
     items: [{ partNumber: '', quantity: 1, description: '' }]
   });
 
-  const handleQuoteSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quoteNumber.trim()) return;
+  const fetchQuoteDetails = async (quoteNum: string) => {
+    const trimmed = quoteNum.trim();
+    if (!trimmed) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/ingram/quotes?quoteNumber=${encodeURIComponent(quoteNumber.trim())}`);
+      const response = await fetch(`/api/ingram/quotes?quoteNumber=${encodeURIComponent(trimmed)}`);
       const data = await response.json();
 
       if (response.ok && data) {
         setQuoteDetails(data);
+        setQuoteNumber(trimmed);
       } else {
         setError(data.error || 'Quote not found');
         setQuoteDetails(null);
@@ -62,6 +63,12 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
     }
   };
 
+  const handleQuoteSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quoteNumber.trim()) return;
+    await fetchQuoteDetails(quoteNumber);
+  };
+
   const handleQuoteList = async () => {
     setLoading(true);
     setError(null);
@@ -70,14 +77,14 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
       const response = await fetch('/api/ingram/quotes?pageSize=20&pageNumber=1');
       const data = await response.json();
 
-      if (response.ok && data.quotes) {
+      if (response.ok && Array.isArray(data.quotes)) {
         setQuotes(data.quotes);
       } else {
-        setError(data.error || 'Failed to fetch quotes');
+        setError(data?.error || 'Failed to load quotes. Try again later.');
         setQuotes([]);
       }
     } catch (err) {
-      setError('Failed to fetch quotes');
+      setError('Failed to load quotes. Try again later.');
       console.error('Quote list failed:', err);
     } finally {
       setLoading(false);
@@ -527,43 +534,57 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {quotes.map((quote) => (
-                    <tr key={quote.quoteNumber} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {quote.quoteNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">{quote.customerName}</div>
-                          <div className="text-gray-500">{quote.customerEmail}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(quote.createdDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={getStatusVariant(quote.status)}>
-                          {quote.status}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(quote.total)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setQuoteNumber(quote.quoteNumber);
-                            setActiveView('search');
-                            handleQuoteSearch(new Event('submit') as any);
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {quotes.map((quote, index) => {
+                    const quoteKey =
+                      quote.quoteNumber ||
+                      quote.quoteGuid ||
+                      `${quote.vendor ?? 'quote'}-${quote.ingramQuoteDate ?? quote.lastModifiedDate ?? 'idx'}-${index}`;
+                    const customerLabel = quote.endUserName ?? quote.endUserContact ?? '—';
+                    const secondaryLabel = quote.vendor ?? quote.specialBidNumber ?? '—';
+                    const quoteDate = quote.ingramQuoteDate ?? quote.lastModifiedDate ?? null;
+                    const statusLabel = quote.quoteStatus ?? 'Unknown';
+                    const totalValue = typeof quote.quoteTotal === 'number' ? quote.quoteTotal : 0;
+
+                    return (
+                      <tr key={quoteKey} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {quote.quoteNumber ?? '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{customerLabel}</div>
+                            <div className="text-gray-500">{secondaryLabel}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {quoteDate ? formatDate(quoteDate) : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant={getStatusVariant(statusLabel)}>
+                            {statusLabel}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(totalValue, quote.currencyCode ?? 'USD')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!quote.quoteNumber}
+                            onClick={() => {
+                              if (quote.quoteNumber) {
+                                setActiveView('search');
+                                fetchQuoteDetails(quote.quoteNumber);
+                              }
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

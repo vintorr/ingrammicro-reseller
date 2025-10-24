@@ -5,8 +5,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const quoteNumber = searchParams.get('quoteNumber');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
-    const page = parseInt(searchParams.get('pageNumber') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
+    const pageNumber = parseInt(searchParams.get('pageNumber') || '1', 10);
 
     let data;
 
@@ -15,17 +15,22 @@ export async function GET(request: NextRequest) {
       data = await quotesApi.getQuoteDetails(quoteNumber);
     } else {
       // Get quotes list
-      const searchParams_obj = {
-        page,
-        size: pageSize,
+      const params = {
+        pageNumber,
+        pageSize,
+        status: searchParams.get('status') || undefined,
+        quoteName: searchParams.get('quoteName') || undefined,
+        sortBy: searchParams.get('sortBy') || undefined,
+        sortingOrder: searchParams.get('sortingOrder') || undefined,
         fromDate: searchParams.get('fromDate') || undefined,
         toDate: searchParams.get('toDate') || undefined,
-        status: searchParams.get('status') || undefined,
+        specialBidNumber: searchParams.get('specialBidNumber') || undefined,
+        endUserContact: searchParams.get('endUserContact') || undefined,
+        vendorName: searchParams.get('vendorName') || undefined,
       };
 
-      // Remove undefined values
       const cleanParams = Object.fromEntries(
-        Object.entries(searchParams_obj).filter(([_, value]) => value !== undefined)
+        Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
       );
 
       data = await quotesApi.searchQuotes(cleanParams);
