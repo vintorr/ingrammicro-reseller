@@ -1,41 +1,65 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Package, 
-  DollarSign, 
-  FileText, 
-  Settings, 
-  Users, 
-  BarChart3,
+import { useEffect, useState } from 'react';
+import {
+  LayoutDashboard,
+  Package,
+  DollarSign,
+  FileText,
   Menu,
   X,
   LogOut,
-  User
+  User,
+  Undo2,
+  Receipt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+const ADMIN_AUTH_STORAGE_KEY = 'ingrammicro-admin-auth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Orders', href: '/admin/orders', icon: FileText },
+    { name: 'Returns', href: '/admin/returns', icon: Undo2 },
+    { name: 'Invoices', href: '/admin/invoices', icon: Receipt },
+    { name: 'Quotes', href: '/admin/quotes', icon: FileText },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Price & Availability', href: '/admin/pricing', icon: DollarSign },
-    { name: 'Orders', href: '/admin/orders', icon: FileText },
-    { name: 'Quotes', href: '/admin/quotes', icon: FileText },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Users', href: '/admin/users', icon: Users },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const authorized = localStorage.getItem(ADMIN_AUTH_STORAGE_KEY) === 'true';
+    if (!authorized) {
+      router.replace('/admin/login');
+      setHasAccess(false);
+    } else {
+      setHasAccess(true);
+    }
+    setCheckingAuth(false);
+  }, [router]);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
+    }
+    router.replace('/admin/login');
+  };
 
   const isActive = (href: string) => {
     if (href === '/admin') {
@@ -43,6 +67,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
     return pathname.startsWith(href);
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -114,7 +150,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <p className="text-sm font-medium text-gray-900">Admin User</p>
               <p className="text-xs text-gray-500">admin@techstore.com</p>
             </div>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-gray-600"
+              onClick={handleLogout}
+            >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>

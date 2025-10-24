@@ -53,6 +53,7 @@ class IngramAuthService {
 
   async getAuthHeaders(): Promise<Record<string, string>> {
     const token = await this.getAccessToken();
+    const applicationId = process.env.INGRAM_APPLICATION_ID || process.env.INGRAM_SENDER_ID;
     
     return {
       'Content-Type': 'application/json',
@@ -61,6 +62,7 @@ class IngramAuthService {
       'IM-CustomerNumber': process.env.INGRAM_CUSTOMER_NUMBER!,
       'IM-CountryCode': process.env.INGRAM_COUNTRY_CODE!,
       'IM-SenderID': process.env.INGRAM_SENDER_ID!,
+      ...(applicationId ? { 'IM-ApplicationID': applicationId } : {}),
       'IM-CorrelationID': uuidv4().replace(/-/g, '').substring(0, 32),
     };
   }
@@ -106,4 +108,3 @@ export async function getIngramAccessToken(): Promise<string> {
 export async function makeIngramAPICall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   return ingramAuth.makeAPICall<T>(endpoint, options);
 }
-

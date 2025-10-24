@@ -1,4 +1,4 @@
-import { HomePageClient } from './(public)/HomePageClient';
+import { HomePageClient } from './HomePageClient';
 
 export const dynamic = 'force-dynamic';
 

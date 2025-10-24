@@ -30,10 +30,9 @@ The admin panel is located in `src/app/(admin)/` and includes:
 - **Products** (`/admin/products`) - Product management
 - **Pricing** (`/admin/pricing`) - Price and availability management
 - **Orders** (`/admin/orders`) - Order management
+- **Returns** (`/admin/returns`) - Return merchandise authorization management
+- **Invoices** (`/admin/invoices`) - Invoice tracking and payment status
 - **Quotes** (`/admin/quotes`) - Quote management
-- **Analytics** (`/admin/analytics`) - Business analytics
-- **Users** (`/admin/users`) - User management
-- **Settings** (`/admin/settings`) - System settings
 
 ### Features:
 - Sidebar navigation
@@ -44,7 +43,7 @@ The admin panel is located in `src/app/(admin)/` and includes:
 ## Access Control
 
 - **Public Site**: Accessible to all users
-- **Admin Access**: Protected by password (`/admin-access`)
+- **Admin Access**: Protected by password (`/admin/login`)
   - Demo password: `admin123`
 - **Admin Panel**: Accessible after authentication
 
@@ -57,7 +56,7 @@ The admin panel is located in `src/app/(admin)/` and includes:
 - Admin access link
 
 ### Admin Navigation:
-- Dashboard, Products, Pricing, Orders, Quotes, Analytics, Users, Settings
+- Dashboard, Orders, Returns, Invoices, Quotes, Products, Pricing
 - User profile and logout
 
 ## Components
@@ -84,22 +83,24 @@ src/app/
 │   ├── products/       # Product browsing
 │   ├── categories/     # Product categories
 │   ├── about/          # About page
-│   └── contact/        # Contact page
+│   ├── contact/        # Contact page
+│   └── admin/login/    # Admin authentication screen
 ├── (admin)/            # Admin panel
-│   ├── layout.tsx      # Admin layout with sidebar
-│   ├── page.tsx        # Admin dashboard
-│   ├── products/       # Product management
-│   ├── pricing/        # Price management
+│   ├── layout.tsx      # Admin layout with sidebar & guard
+│   ├── page.tsx        # Admin dashboard (live metrics)
 │   ├── orders/         # Order management
-│   └── quotes/         # Quote management
-├── admin-access/       # Admin authentication
+│   ├── returns/        # Returns management
+│   ├── invoices/       # Invoice management
+│   ├── quotes/         # Quote management
+│   ├── products/       # Product management
+│   └── pricing/        # Price & availability
 └── layout.tsx          # Root layout
 ```
 
 ## Getting Started
 
 1. **Public Site**: Visit `/` to see the e-commerce site
-2. **Admin Access**: Visit `/admin-access` and use password `admin123`
+2. **Admin Access**: Visit `/admin/login` and use password `admin123`
 3. **Admin Panel**: After authentication, access `/admin` for the dashboard
 
 ## Technology Stack

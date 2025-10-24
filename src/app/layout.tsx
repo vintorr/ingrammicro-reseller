@@ -1,6 +1,4 @@
 import { Providers } from "./providers";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer"; // ✅ Added Footer import
 import "./globals.css";
 
 export const metadata = {
@@ -18,18 +16,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased text-[var(--color-foreground)]">
         <Providers>
-          {/* ✅ Glassy transparent header visible on all pages */}
-          <Header />
-
-          {/* ✅ Main content (with padding to prevent overlap under header) */}
-          <main className="pt-24">
-            <div className="mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8">
-              {children}
-            </div>
-          </main>
-
-          {/* ✅ Gradient footer consistent with header aesthetics */}
-          <Footer />
+          {children}
         </Providers>
       </body>
     </html>

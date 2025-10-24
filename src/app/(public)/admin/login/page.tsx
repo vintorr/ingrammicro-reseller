@@ -1,22 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Package, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 
-export default function AdminAccessPage() {
+const ADMIN_AUTH_STORAGE_KEY = 'ingrammicro-admin-auth';
+const ADMIN_PASSWORD = 'admin123';
+
+export default function AdminLoginPage() {
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Simple password check (in production, use proper authentication)
-    if (password === 'admin123') {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const hasAccess = localStorage.getItem(ADMIN_AUTH_STORAGE_KEY) === 'true';
+    if (hasAccess) {
+      router.replace('/admin');
+    }
+  }, [router]);
+
+  const handleLogin = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (password === ADMIN_PASSWORD) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ADMIN_AUTH_STORAGE_KEY, 'true');
+      }
       setIsAuthenticated(true);
       setError('');
+      router.push('/admin');
     } else {
       setError('Invalid password. Please try again.');
     }
@@ -29,18 +46,8 @@ export default function AdminAccessPage() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Access Granted
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You now have access to the admin panel.
-          </p>
-          <Link href="/admin">
-            <Button size="lg" className="w-full">
-              Go to Admin Panel
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </Link>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Granted</h2>
+          <p className="text-gray-600 mb-6">Redirecting you to the admin panel...</p>
         </div>
       </div>
     );
@@ -53,9 +60,7 @@ export default function AdminAccessPage() {
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Admin Access
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Login</h1>
           <p className="text-gray-600">
             Enter the admin password to access the management panel
           </p>
@@ -70,33 +75,30 @@ export default function AdminAccessPage() {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter admin password"
               required
             />
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center">
-              {error}
-            </div>
-          )}
+          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
 
           <Button type="submit" size="lg" className="w-full">
             Access Admin Panel
+            <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <Link href="/" className="text-blue-600 hover:text-blue-500 text-sm">
-            ← Back to Public Site
+            Back to Public Site
           </Link>
         </div>
 
         <div className="mt-8 p-4 bg-gray-50 rounded-md">
           <p className="text-xs text-gray-500 text-center">
-            Demo Password: <code className="bg-gray-200 px-1 rounded">admin123</code>
+            Demo Password: <code className="bg-gray-200 px-1 rounded">{ADMIN_PASSWORD}</code>
           </p>
         </div>
       </div>
