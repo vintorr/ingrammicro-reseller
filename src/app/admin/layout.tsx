@@ -148,7 +148,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             <div className="ml-3 flex-1">
               <p className="text-sm font-medium text-gray-900">Admin User</p>
-              <p className="text-xs text-gray-500">admin@techstore.com</p>
+              <p className="text-xs text-gray-500">admin@techcareplus.ca</p>
             </div>
             <Button
               variant="ghost"

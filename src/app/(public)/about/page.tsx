@@ -67,11 +67,10 @@ export default function AboutPage() {
       {/* Hero Section */}
       <div className="text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          About TechStore
+          About Techcareplus
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          We are a leading technology solutions provider, committed to delivering 
-          innovative products and exceptional service to businesses worldwide.
+          Techcareplus is a Canadian technology reseller dedicated to helping partners deliver the right gear, on time, with the wraparound services their customers expect.
         </p>
       </div>
 
@@ -101,21 +100,13 @@ export default function AboutPage() {
             </h2>
             <div className="space-y-4 text-gray-600">
               <p>
-                Founded in 1999, TechStore began as a small technology retailer with a big vision: 
-                to make cutting-edge technology accessible to businesses of all sizes. What started 
-                as a local computer store has grown into a global technology solutions provider.
+                Techcareplus launched more than two decades ago as a boutique reseller focused on pairing the right technology with dedicated lifecycle support. From our first warehouse in Ontario to our current national footprint, we&apos;ve stayed rooted in one mission: empower partners to delight their end customers.
               </p>
               <p>
-                Over the years, we&apos;ve built strong partnerships with leading technology manufacturers 
-                and developed deep expertise in enterprise solutions, cloud computing, and emerging 
-                technologies. Our team of certified professionals is dedicated to helping our customers 
-                succeed in an ever-evolving digital landscape.
+                Along the way we&apos;ve built deep relationships with Ingram Micro and leading manufacturers, giving our partners priority access to inventory, programs, and expertise. Whether it&apos;s a single device drop-ship or a multi-site deployment, our team navigates the supply chain so you can stay focused on the customer experience.
               </p>
               <p>
-                Today, we serve thousands of customers across multiple industries, from small startups 
-                to Fortune 500 companies. Our commitment to quality, innovation, and customer service 
-                remains unchanged, and we continue to invest in the latest technologies and training 
-                to serve you better.
+                Today, Techcareplus supports resellers, MSPs, and procurement teams across Canada with curated catalogs, logistics, and attach services. We continue to invest in people, platforms, and partnerships that make the reseller journey simpler, faster, and more profitable.
               </p>
             </div>
           </div>

@@ -53,7 +53,7 @@ export default function ContactPage() {
     {
       icon: <Mail className="w-6 h-6 text-green-600" />,
       title: 'Email',
-      details: ['sales@techstore.com', 'support@techstore.com'],
+      details: ['sales@techcareplus.ca', 'support@techcareplus.ca'],
       description: 'We respond within 24 hours'
     },
     {
@@ -73,19 +73,19 @@ export default function ContactPage() {
   const departments = [
     {
       name: 'Sales',
-      email: 'sales@techstore.com',
+      email: 'sales@techcareplus.ca',
       phone: '+1 (555) 123-4567',
       description: 'For product inquiries and pricing'
     },
     {
       name: 'Technical Support',
-      email: 'support@techstore.com',
+      email: 'support@techcareplus.ca',
       phone: '+1 (555) 123-4568',
       description: 'For technical assistance and troubleshooting'
     },
     {
       name: 'Customer Service',
-      email: 'service@techstore.com',
+      email: 'service@techcareplus.ca',
       phone: '+1 (555) 123-4569',
       description: 'For orders, returns, and general inquiries'
     }

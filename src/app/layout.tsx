@@ -2,9 +2,9 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata = {
-  title: "TechStore - Technology Solutions",
+  title: "Techcareplus Reseller Store",
   description:
-    "Your trusted partner for technology solutions. Browse our comprehensive range of products and get expert support.",
+    "Shop the Techcareplus reseller catalog for enterprise technology, logistics support, and attach services across Canada.",
 };
 
 interface RootLayoutProps {
