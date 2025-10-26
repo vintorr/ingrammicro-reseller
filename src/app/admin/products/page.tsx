@@ -1,5 +1,5 @@
-import ProductSearch from '@/components/ProductSearch';
+import ProductManagement from '@/components/ProductManagement';
 
 export default function AdminProductsPage() {
-  return <ProductSearch />;
+  return <ProductManagement />;
 }

@@ -448,7 +448,7 @@ const ProductSearch = () => {
       <div className="mt-8 relative z-10 mx-auto w-full max-w-screen-xl px-4 pb-24 md:px-6 lg:px-8">
         <div className="space-y-8">
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">
                   Search Products
