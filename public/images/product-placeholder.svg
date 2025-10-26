@@ -1,0 +1,20 @@
+<svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="240" rx="24" fill="url(#gradient-background)"/>
+  <rect x="32" y="40" width="256" height="160" rx="20" fill="url(#gradient-panel)" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-dasharray="10 10"/>
+  <g opacity="0.85">
+    <circle cx="120" cy="120" r="36" fill="rgba(255,255,255,0.55)"/>
+    <path d="M88 168L112 144L136 160L168 128L208 168H88Z" fill="rgba(255,255,255,0.35)"/>
+    <circle cx="204" cy="108" r="28" stroke="rgba(255,255,255,0.6)" stroke-width="6"/>
+    <circle cx="204" cy="108" r="12" fill="rgba(255,255,255,0.7)"/>
+  </g>
+  <defs>
+    <linearGradient id="gradient-background" x1="24" y1="16" x2="304" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EEF2FF"/>
+      <stop offset="1" stop-color="#C7D2FE"/>
+    </linearGradient>
+    <radialGradient id="gradient-panel" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 120) scale(168 120)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#E0E7FF" stop-opacity="0.45"/>
+    </radialGradient>
+  </defs>
+</svg>
