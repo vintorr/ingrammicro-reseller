@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, X, ShoppingCart, User, Boxes, Grid2x2 } from "lucide-react";
+import { Menu, X, ShoppingCart, Boxes, Home } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
 
 const parseRGB = (cssColor: string | null) => {
@@ -97,9 +97,8 @@ export default function Header() {
   const borderClass = useDarkText ? "border-gray-200" : "border-white/20";
 
   const navItems = [
+    { name: "Home", href: "/", icon: Home },
     { name: "Products", href: "/products", icon: Boxes },
-    { name: "Categories", href: "/categories", icon: Grid2x2 },
-    { name: "Account", href: "/account", icon: User },
   ];
 
   return (
