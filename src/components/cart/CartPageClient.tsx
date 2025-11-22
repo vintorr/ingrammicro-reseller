@@ -42,8 +42,7 @@ export const CartPageClient = () => {
   const [billToAddressId, setBillToAddressId] = useState('');
   const [notes, setNotes] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
-  const [acceptBackOrder, setAcceptBackOrder] = useState(true);
-  const [includeEndUser, setIncludeEndUser] = useState(false);
+  const [allowDuplicateCustomerOrderNumber, setAllowDuplicateCustomerOrderNumber] = useState(true);
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const initialAddress = {
     companyName: '',
@@ -58,7 +57,6 @@ export const CartPageClient = () => {
     email: '',
   };
   const [shipTo, setShipTo] = useState({ ...initialAddress });
-  const [endUser, setEndUser] = useState({ ...initialAddress });
   const recentOrder = lastOrderResponse?.orders?.[0];
   const recentOrderTotal = recentOrder?.orderTotal ?? lastOrderResponse?.purchaseOrderTotal;
   const recentOrderCurrency = recentOrder?.currencyCode ?? 'USD';
@@ -71,20 +69,23 @@ export const CartPageClient = () => {
     }));
   };
 
-  const handleEndUserChange = (field: keyof typeof endUser) => (event: ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setEndUser((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
-
   const toOrderAddress = (input: typeof shipTo) => {
     const payload: Partial<typeof shipTo> = {};
     (Object.entries(input) as Array<[keyof typeof shipTo, string]>).forEach(([key, rawValue]) => {
       const value = rawValue.trim();
       if (value) {
-        payload[key] = key === 'countryCode' ? value.toUpperCase() : value;
+        if (key === 'countryCode') {
+          payload[key] = value.toUpperCase();
+        } else if (key === 'phoneNumber') {
+          const digitsOnly = value.replace(/\D/g, '');
+          if (digitsOnly) {
+            payload[key] = digitsOnly;
+          }
+        } else if (key === 'email') {
+          payload[key] = value.toLowerCase();
+        } else {
+          payload[key] = value;
+        }
       }
     });
     return Object.keys(payload).length > 0 ? payload : undefined;
@@ -107,11 +108,14 @@ export const CartPageClient = () => {
 
     const requiredShippingFields: Array<keyof typeof shipTo> = [
       'companyName',
+      'contact',
       'addressLine1',
       'city',
       'state',
       'postalCode',
       'countryCode',
+      'phoneNumber',
+      'email',
     ];
 
     const incompleteShippingField = requiredShippingFields.find((field) => !shipTo[field].trim());
@@ -120,8 +124,15 @@ export const CartPageClient = () => {
       return;
     }
 
+    const trimmedShipToPhone = shipTo.phoneNumber.trim();
+    const normalizedShipToPhone = trimmedShipToPhone.replace(/\D/g, '');
+    if (normalizedShipToPhone.length < 7) {
+      setLocalError('Please enter a valid shipping phone number (digits only).');
+      return;
+    }
+
     const trimmedShipToEmail = shipTo.email.trim();
-    if (trimmedShipToEmail && !emailPattern.test(trimmedShipToEmail)) {
+    if (!emailPattern.test(trimmedShipToEmail)) {
       setLocalError('Please enter a valid shipping email address.');
       return;
     }
@@ -144,57 +155,23 @@ export const CartPageClient = () => {
       return;
     }
 
-    let endUserPayload: ReturnType<typeof toOrderAddress> | undefined;
-    let shouldSendEndUser = false;
-
-    if (includeEndUser) {
-      const requiredEndUserFields: Array<keyof typeof endUser> = [
-        'companyName',
-        'addressLine1',
-        'city',
-        'state',
-        'postalCode',
-        'countryCode',
-      ];
-
-      const missingEndUserField = requiredEndUserFields.find((field) => !endUser[field].trim());
-      if (missingEndUserField) {
-        setLocalError('Please fill in all required end user information.');
-        return;
-      }
-
-      const trimmedEndUserEmail = endUser.email.trim();
-      if (trimmedEndUserEmail && !emailPattern.test(trimmedEndUserEmail)) {
-        setLocalError('Please enter a valid end user email address.');
-        return;
-      }
-
-      const trimmedEndUserCountry = endUser.countryCode.trim();
-      if (!/^[A-Za-z]{2}$/.test(trimmedEndUserCountry)) {
-        setLocalError('End user country code must be a two-letter ISO code.');
-        return;
-      }
-
-      const trimmedEndUserState = endUser.state.trim();
-      if (trimmedEndUserCountry.toUpperCase() === 'US' && !/^[A-Za-z]{2}$/.test(trimmedEndUserState)) {
-        setLocalError('End user state must be a two-letter code when located in the United States.');
-        return;
-      }
-
-      endUserPayload = toOrderAddress(endUser);
-      shouldSendEndUser = Boolean(endUserPayload);
-    }
     setLocalError(null);
     try {
+      const additionalAttributes = [
+        {
+          attributeName: 'allowDuplicateCustomerOrderNumber',
+          attributeValue: allowDuplicateCustomerOrderNumber ? 'true' : 'false',
+        },
+      ];
+
       const orderPayload = {
         customerOrderNumber: trimmedCustomerOrderNumber,
         notes: notes.trim() || undefined,
-        acceptBackOrder,
         shipToInfo: shipToPayload,
         endCustomerOrderNumber: endCustomerOrderNumber.trim() || undefined,
         specialBidNumber: specialBidNumber.trim() || undefined,
         billToAddressId: billToAddressId.trim() || undefined,
-        endUserInfo: shouldSendEndUser ? endUserPayload : undefined,
+        additionalAttributes,
       } satisfies Omit<CartOrderPayload, 'lines'>;
 
       await createOrderFromCart(orderPayload);
@@ -205,8 +182,7 @@ export const CartPageClient = () => {
       setBillToAddressId('');
       setNotes('');
       setShipTo({ ...initialAddress });
-      setEndUser({ ...initialAddress });
-      setIncludeEndUser(false);
+      setAllowDuplicateCustomerOrderNumber(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to create order. Please try again.';
       setLocalError(message);
@@ -481,15 +457,34 @@ export const CartPageClient = () => {
                       />
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
-                    <input
-                      type="checkbox"
-                      checked={acceptBackOrder}
-                      onChange={(event) => setAcceptBackOrder(event.target.checked)}
-                      className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                    />
-                    Allow backorders if items are unavailable immediately
-                  </label>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
+                    Order preferences
+                  </h3>
+                  <div className="rounded-lg border border-[var(--color-border)] bg-white px-4 py-3">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={allowDuplicateCustomerOrderNumber}
+                        onChange={(event) => setAllowDuplicateCustomerOrderNumber(event.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                      />
+                      <div className="space-y-1">
+                        <span className="block text-sm font-medium text-[var(--color-foreground)]">
+                          Allow duplicate customer order numbers
+                        </span>
+                        <span className="block text-xs text-[var(--color-muted)]">
+                          Adds additional attribute&nbsp;
+                          <code className="rounded bg-[var(--color-primary-light)]/40 px-1.5 py-0.5 text-[0.7rem]">
+                            {`{ attributeName: "allowDuplicateCustomerOrderNumber", attributeValue: "${allowDuplicateCustomerOrderNumber ? 'true' : 'false'}" }`}
+                          </code>
+                          &nbsp;to match Ingram’s order payload requirements.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                 </section>
 
                 <section className="space-y-3">
@@ -505,18 +500,18 @@ export const CartPageClient = () => {
                         value={shipTo.companyName}
                         onChange={handleShipToChange('companyName')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="Ship-to company"
+                        placeholder="FIRST NATIONAL BANK OF OMAHA"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                        Attention / contact
+                        Attention / contact*
                       </label>
                       <input
                         value={shipTo.contact}
                         onChange={handleShipToChange('contact')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="Contact name"
+                        placeholder="TOM SORENSEN"
                       />
                     </div>
                     <div className="sm:col-span-2 space-y-1.5">
@@ -527,7 +522,7 @@ export const CartPageClient = () => {
                         value={shipTo.addressLine1}
                         onChange={handleShipToChange('addressLine1')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="Street address"
+                        placeholder="17501 W 98TH ST SPC 1833"
                       />
                     </div>
                     <div className="sm:col-span-2 space-y-1.5">
@@ -549,7 +544,7 @@ export const CartPageClient = () => {
                         value={shipTo.city}
                         onChange={handleShipToChange('city')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="City"
+                        placeholder="LENEXA"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -560,18 +555,18 @@ export const CartPageClient = () => {
                         value={shipTo.state}
                         onChange={handleShipToChange('state')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="State"
+                        placeholder="KS"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                        Postal code*
+                        Postal / ZIP code*
                       </label>
                       <input
                         value={shipTo.postalCode}
                         onChange={handleShipToChange('postalCode')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="ZIP or postal code"
+                        placeholder="662191736"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -588,165 +583,27 @@ export const CartPageClient = () => {
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                        Phone
+                        Phone*
                       </label>
                       <input
                         value={shipTo.phoneNumber}
                         onChange={handleShipToChange('phoneNumber')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="Contact phone"
+                        placeholder="987654321"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                        Email
+                        Email*
                       </label>
                       <input
                         value={shipTo.email}
                         onChange={handleShipToChange('email')}
                         className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                        placeholder="Contact email"
+                        placeholder="testing@yaho.com"
                       />
                     </div>
                   </div>
-                </section>
-
-                <section className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIncludeEndUser((previous) => {
-                        if (previous) {
-                          setEndUser({ ...initialAddress });
-                        }
-                        return !previous;
-                      });
-                    }}
-                    className="text-sm font-medium text-[var(--color-primary)] underline-offset-2 hover:underline"
-                  >
-                    {includeEndUser ? 'Remove end-user details' : 'Add end-user shipment details'}
-                  </button>
-
-                  {includeEndUser && (
-                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-primary-light)]/20 p-4 space-y-3">
-                      <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
-                        End-user information
-                      </h3>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Company name
-                          </label>
-                          <input
-                            value={endUser.companyName}
-                            onChange={handleEndUserChange('companyName')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="End-user company"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Contact
-                          </label>
-                          <input
-                            value={endUser.contact}
-                            onChange={handleEndUserChange('contact')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="Point of contact"
-                          />
-                        </div>
-                        <div className="sm:col-span-2 space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Address line 1
-                          </label>
-                          <input
-                            value={endUser.addressLine1}
-                            onChange={handleEndUserChange('addressLine1')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="Street address"
-                          />
-                        </div>
-                        <div className="sm:col-span-2 space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Address line 2
-                          </label>
-                          <input
-                            value={endUser.addressLine2}
-                            onChange={handleEndUserChange('addressLine2')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="Suite, building, etc."
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            City
-                          </label>
-                          <input
-                            value={endUser.city}
-                            onChange={handleEndUserChange('city')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="City"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            State / Province
-                          </label>
-                          <input
-                            value={endUser.state}
-                            onChange={handleEndUserChange('state')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="State"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Postal code
-                          </label>
-                          <input
-                            value={endUser.postalCode}
-                            onChange={handleEndUserChange('postalCode')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="ZIP or postal code"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Country code
-                          </label>
-                          <input
-                            value={endUser.countryCode}
-                            onChange={handleEndUserChange('countryCode')}
-                            className="w-full uppercase rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="US"
-                            maxLength={3}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Phone
-                          </label>
-                          <input
-                            value={endUser.phoneNumber}
-                            onChange={handleEndUserChange('phoneNumber')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="Contact phone"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--color-muted)]">
-                            Email
-                          </label>
-                          <input
-                            value={endUser.email}
-                            onChange={handleEndUserChange('email')}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-                            placeholder="Contact email"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </section>
 
                 <section className="space-y-2">
